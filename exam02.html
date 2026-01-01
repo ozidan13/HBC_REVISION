@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPC Comprehensive Exam 2: Performance & Memory Systems</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #c084fc;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
+        }
+
+        header h2 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 10px;
+        }
+
+        header .subtitle {
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* Q&A Interleaved Layout */
+        .qa-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .qa-pair {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            transition: transform 0.2s ease;
+        }
+
+        .qa-pair:hover {
+            transform: translateY(-2px);
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .qa-question {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .qa-answer-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+            display: none;
+            /* Hidden by default */
+            animation: slideDown 0.4s ease;
+        }
+
+        .qa-answer-block.show {
+            display: grid;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .qa-answer-block {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .qa-english,
+        .qa-arabic {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+            height: 100%;
+        }
+
+        .qa-english {
+            border-left: 3px solid var(--primary);
+        }
+
+        .qa-arabic {
+            direction: rtl;
+            font-family: 'Cairo', sans-serif;
+            border-right: 3px solid var(--success);
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        .label-eng {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.7;
+            color: var(--primary);
+        }
+
+        .label-ar {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.7;
+            color: var(--success);
+        }
+
+        /* General Question Container Styles */
+        .question-block {
+            margin-bottom: 60px;
+        }
+
+        .question-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            font-size: 1.1rem;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            font-weight: 700;
+        }
+
+        .question-marks {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .answer-button {
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            color: #fff;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .answer-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .section-header {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 60px 0 30px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            border-left: 5px solid var(--accent);
+            padding-left: 20px;
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+
+        /* Utilities */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent);
+            font-size: 0.9em;
+            direction: ltr;
+            /* Force LTR for code in Arabic text */
+            display: inline-block;
+        }
+
+        pre {
+            background: #09090b !important;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+            direction: ltr;
+            text-align: left;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .qa-arabic ul {
+            padding-right: 20px;
+            padding-left: 0;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* Accessing specific colors for highlighting */
+        .highlight {
+            color: var(--warning);
+            font-weight: bold;
+        }
+
+        .formula-box {
+            background: rgba(79, 172, 254, 0.1);
+            border: 2px solid rgba(79, 172, 254, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            color: #c7d2fe;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 20px 40px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 80px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ HPC Comprehensive Exam 2</h1>
+            <h2>Performance & Memory Systems</h2>
+            <p class="subtitle">ILP, Power Wall, Amdahl's Law, Memory Hierarchies & SIMD Coherence</p>
+        </header>
+
+        <div class="section-description" style="text-align: center;">
+            <p><strong>Total Marks:</strong> 70 | <strong>Time:</strong> 120 Minutes | <strong>Format:</strong>
+                Definitions, Calculations, Analysis</p>
+        </div>
+
+        <!-- SECTION 1: ILP & Power Wall -->
+        <h2 class="section-header">Section 1: ILP & Power Wall (30%)</h2>
+        <p class="section-description">Understanding the limits of single-core performance and the power constraints
+            that forced the shift to multicore.</p>
+
+        <!-- Question 1 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q1</span>
+                <span class="question-marks">8 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Explain what happened around 2002 in processor design and why it led to multi-core
+                                adoption.</strong></p>
+                        <ol style="margin-top: 10px;">
+                            <li>Describe the performance trends before 2002.</li>
+                            <li>What changed around 2002?</li>
+                            <li>Why did the industry shift to multi-core?</li>
+                        </ol>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q1-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q1-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><strong>a) Trends Before 2002:</strong></p>
+                            <ul>
+                                <li><strong>Exponential Growth:</strong> ~50% annual performance improvement.</li>
+                                <li><strong>Drivers:</strong> Frequency Scaling (MHz -> GHz) and ILP extraction
+                                    (Instruction Level Parallelism).</li>
+                            </ul>
+                            <p><strong>b) What Changed (2002):</strong></p>
+                            <ul>
+                                <li><strong>Features hit a wall:</strong> Frequency stalled at ~4GHz.</li>
+                                <li><strong>The Power Wall:</strong> Power density increased to unsustainable levels
+                                    (nuclear reactor core heat!).</li>
+                                <li><strong>ILP limit:</strong> Diminishing returns on extracting more parallelism from
+                                    single threads.</li>
+                            </ul>
+                            <p><strong>c) Shift to Multi-core:</strong></p>
+                            <ul>
+                                <li><strong>Solution:</strong> Instead of one faster, hotter core, use two simpler,
+                                    slower cores.</li>
+                                <li><strong>Benefit:</strong> Improves throughput without hitting the power wall
+                                    (Moore's Law kept giving more transistors).</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>نقطة التحول في 2002:</strong></p>
+                            <p>تخيل إنك عندك "سواق ميكروباص" (البروسيسور) وعايز تنقل ركاب أكتر (Performance).</p>
+                            <ul>
+                                <li><strong>قبل 2002:</strong> كنا كل سنة بندي السواق "منشطات" (Frequency) عشان يجري
+                                    أسرع وعربية أكبر. الأداء كان بيزيد صاروخ! 🚀</li>
+                                <li><strong>اللي حصل في 2002:</strong> "الموتور ضرب" 💥. وصلنا لمرحلة إننا لو زودنا
+                                    السرعة أكتر من كده، العربية هتولع مننا <strong>(Power Wall)</strong>. الحرارة بقيت
+                                    عالية جداً وصرف البنزين بقى خرافي مش اقتصادي.</li>
+                                <li><strong>الحل (Multi-core):</strong> الشركات قالت بدل ما نجيب "سواق واحد سوبر مان"
+                                    ويطلب مرتب خيالي ويولع الدنيا، تعال نجيب "اتنين سواقين شاطرين" (2 Cores) يشتغلوا مع
+                                    بعض. المجموع الكلي للشغل هيزيد، بس من غير ما الموتور يتحرق. دي كانت بداية عصر الـ
+                                    Multicore.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q2</span>
+                <span class="question-marks">13 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Power Wall Analysis and Multi-core Power Savings.</strong></p>
+                        <div class="formula-box">Power = C × V² × F</div>
+                        <ol style="margin-top: 10px;">
+                            <li>Explain each component (C, V, F).</li>
+                            <li>Why does power increase severely with V?</li>
+                            <li>Calculate the power saving if we use 2 cores at V/2 and F/2 compared to 1 core at V and
+                                F.</li>
+                        </ol>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q2-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q2-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><strong>a) Components:</strong></p>
+                            <ul>
+                                <li><code>C</code>: Capacitive Load (transistor count/size).</li>
+                                <li><code>V</code>: Voltage (supply voltage).</li>
+                                <li><code>F</code>: Frequency (clock speed).</li>
+                            </ul>
+                            <p><strong>b) Why V is critical:</strong> Power is proportional to <code>V²</code>. Doubling
+                                voltage quadruples power.</p>
+                            <p><strong>c) Calculation:</strong></p>
+                            <ul>
+                                <li><strong>Single Core:</strong> $P_1 = C \cdot V^2 \cdot F$</li>
+                                <li><strong>Two Cores (half V, half F):</strong>
+                                    <br>Per core: $P' = C \cdot (V/2)^2 \cdot (F/2) = C \cdot \frac{V^2}{4} \cdot
+                                    \frac{F}{2} = \frac{1}{8} P_1$
+                                    <br>Total (2 cores): $2 \times \frac{1}{8} P_1 = \frac{1}{4} P_1$
+                                </li>
+                                <li><strong>Result:</strong> Same throughput (work done), but only <strong>25%</strong>
+                                    of the power!</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>معادلة الباور (سر الطبخة):</strong></p>
+                            <p>الباور <code>Power</code> بيساوي سعة الترانزستور <code>C</code> في مربع الفولت
+                                <code>V²</code> في السرعة <code>F</code>.</p>
+                            <p><strong>ليه الفولت هو "البعبع"؟ 👻</strong></p>
+                            <p>لأن الفولت فيه <code>Square</code> (تربيع). دي عاملة زي "ضغط الدم". لو زودته شوية صغيرين،
+                                الخطورة بتزيد جداً (بتضرب في نفسها). عشان كده المهندسين بيخافوا جداً يزودوا الفولت.</p>
+                            <p><strong>حسبة التوفير:</strong></p>
+                            <p>تخيل إنك عندك "لمبة" واحدة قوية جداً بتسحب كهرباء كتير. لو استبدلتها بـ "لمبتين" إضاءتهم
+                                متوسطة (نص الفولت ونص السرعة):</p>
+                            <ul>
+                                <li>كل لمبة هتستهلك فقط <strong>تمن (1/8)</strong> الطاقة بتاعت اللمبة الكبيرة (عشان
+                                    الفولت نزل للنص، فبقى ربع، والسرعة نزلت للنص).</li>
+                                <li>لما تشغل اللمبتين مع بعض، المجموع هيبقى <strong>ربع (1/4)</strong> استهلاك اللمبة
+                                    الكبيرة، وهيدوك نفس كمية النور (الأداء)!</li>
+                                <li>دي عبقرية الـ Multicore: أداء هو هو، بس فاتورة كهرباء وتبريد أقل بكتير.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q3</span>
+                <span class="question-marks">14 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Amdahl's Law Calculations (Usually the trickiest part!)</strong></p>
+                        <div class="formula-box">Speedup = 1 / (f + (1-f)/N)</div>
+                        <p>Given: A program where <strong>15%</strong> (f=0.15) is sequential.</p>
+                        <ol style="margin-top: 10px;">
+                            <li>Calculate speedup on 8 cores.</li>
+                            <li>Calculate maximum theoretical speedup (Infinite cores).</li>
+                            <li>Explain why efficiency decreases as N increases.</li>
+                        </ol>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q3-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q3-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><code>f = 0.15</code>, <code>1-f = 0.85</code></p>
+                            <p><strong>a) Speedup (8 Cores):</strong></p>
+                            <ul>
+                                <li>$S = 1 / (0.15 + (0.85/8))$</li>
+                                <li>$S = 1 / (0.15 + 0.106) = 1 / 0.256 \approx 3.9$</li>
+                            </ul>
+                            <p><strong>b) Max Speedup (N -> $\infty$):</strong></p>
+                            <ul>
+                                <li>$S_{max} = 1 / f = 1 / 0.15 \approx 6.67$</li>
+                            </ul>
+                            <p><strong>c) Efficiency Decrease:</strong></p>
+                            <ul>
+                                <li>As $N$ increases, the parallel portion time shrinks towards zero, but the sequential
+                                    portion ($f$) remains constant. Most cores end up "waiting" for the sequential part
+                                    to finish, leading to poor utilization.</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>قانون أمدال (طابور العيش): 🍞</strong></p>
+                            <p>تخيل إنك بتعمل رخصة عربية. الإجراءات جزئين:</p>
+                            <ol>
+                                <li><strong>جزء Sequential (إجباري):</strong> لازم تتصور وتمضي بنفسك (بياخد 15 دقيقة).
+                                    ده الـ <code>f</code>. محدش يقدر يعمل ده بدالك.</li>
+                                <li><strong>جزء Parallel (ممكن يتوزع):</strong> مراجعة الورق والملفات (بياخد 85 دقيقة).
+                                </li>
+                            </ol>
+                            <p>لو جبت <strong>8 موظفين</strong> يساعدوك في مراجعة الورق، الـ 85 دقيقة دول هيخلصوا بسرعة
+                                جداً. لكن هتفضل "ملدوغ" في الـ 15 دقيقة بتوع التصوير!</p>
+                            <p><strong>الخلاصة:</strong> مهما كترت عدد الموظفين (Cores)، سرعتك الكلية هتفضل محدودة
+                                بالجزء اللي لازم تعمله لوحدك (Sequential Part). عشان كده الـ Speedup مش بيوصل للسماء،
+                                ليه سقف (Max Speedup) مش هنعديه أبداً.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Memory Systems -->
+        <h2 class="section-header">Section 3: Memory Systems (25%)</h2>
+        <p class="section-description">Latency vs Bandwidth, and how Multithreading hides the delays.</p>
+
+        <!-- Question 4 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q4</span>
+                <span class="question-marks">10 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Define and distinguish between Memory Latency and Memory Bandwidth.</strong> Give an
+                            example for each and explain typical bottlenecks.</p>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q4-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q4-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <ul>
+                                <li><strong>Memory Latency:</strong> Time delay between the request and the arrival of
+                                    the <em>first</em> byte. (e.g., 100ns).
+                                    <br><em>Bottleneck:</em> Pointer chasing, random access.
+                                </li>
+                                <li><strong>Memory Bandwidth:</strong> The rate of data transfer after the first byte
+                                    arrives. (e.g., 20 GB/s).
+                                    <br><em>Bottleneck:</em> Large array processing, streaming data.
+                                </li>
+                            </ul>
+                            <p><strong>Key Difference:</strong> Latency is "time", Bandwidth is "volume".</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>الفرق بين اللاتينسي والباندويدث: 🛵🚚</strong></p>
+                            <ul>
+                                <li><strong>Latency (وقت التوصيل):</strong> زي ما تطلب "بيتزا". الوقت اللي بتستناه من
+                                    ساعة ما تقفل الخط لحد ما الدليفري يخبط على الباب (مثلاً 30 دقيقة). ده "وقت ضايع"
+                                    بتفضل قاعد فيه مستني.</li>
+                                <li><strong>Bandwidth (سعة النقل):</strong> زي "عربية نقل كبيرة" 🚛. ممكن العربية دي
+                                    تكون بطيئة (Latency عالي) وبتاخد وقت عشان توصل، بس لما بتوصل، بتنزلك 50 كرتونة بضاعة
+                                    في الدقيقة!</li>
+                            </ul>
+                            <p><strong>إمتى دي تبقى مشكلة وإمتى دي؟</strong></p>
+                            <ul>
+                                <li>لو بتنقل "طوبة طوبة" (Random Access)، هتتخنق من الـ Latency (كل مرة تستنى الدليفري
+                                    يروح وييجي).</li>
+                                <li>لو بتنقل "شحنة كاملة" (Video Streaming)، يهمك العربية بتشيل قد إيه (Bandwidth)، مش
+                                    مهم وصلت في 5 دقايق ولا 6.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q5</span>
+                <span class="question-marks">8 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Explain how multi-threading hides memory latency.</strong> Compare "Many Small
+                            Contexts" (GPU) vs "Few Large Contexts" (CPU).</p>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q5-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q5-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><strong>Hiding Latency:</strong></p>
+                            <ul>
+                                <li>When one thread stalls waiting for memory (Latency), the hardware instantly switches
+                                    to another ready thread.</li>
+                                <li>This keeps the execution units busy, masking the delay.</li>
+                            </ul>
+                            <p><strong>Comparison:</strong></p>
+                            <ul>
+                                <li><strong>Many Small Contexts (GPU):</strong> Thousands of threads with small register
+                                    sets. Excellent for hiding latency through brute force parallelism.</li>
+                                <li><strong>Few Large Contexts (CPU):</strong> 2-4 threads per core with large register
+                                    sets. Better for complex single-thread performance but less effective at hiding long
+                                    latencies.</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>إخفاء الـ Latency (شطارة الصنايعي): 👷</strong></p>
+                            <p>تخيل "نقاش" (البروسيسور) بيشتغل في شقة.</p>
+                            <ul>
+                                <li>لو النقاش دهن وش، ولازم يستناه ينشف (Memory Stall)، لو قعد يشرب شاي لحد ما ينشف،
+                                    يبقى بيضيع وقت.</li>
+                                <li><strong>الحل (Multi-threading):</strong> الصنايعي الشاطر أول ما يدهن حيطة وتحتاج
+                                    تنشف، يلف يدهن حيطة تانية في أوضة تانية فوراً. هو طول الوقت شغال وإيده مش بتقف، مع
+                                    إن الحيطان نفسها بتاخد وقت عشان تنشف.</li>
+                            </ul>
+                            <p><strong>الفرق بين CPU و GPU:</strong></p>
+                            <ul>
+                                <li><strong>GPU:</strong> زي مقاول جايب 1000 عامل صغيرين، كل واحد معاه فرشة واحدة. لو
+                                    واحد وقف، 999 شغالين. (Throughput عالي).</li>
+                                <li><strong>CPU:</strong> زي "فنان" أو خبير (Master) معاه عدة كاملة ضخمة، بس هو بيشتغل
+                                    لوحده أو مع مساعد واحد. بيعمل شغل معقد ودقيق بسرعة، بس لو عطل، العطلة بتبقى باينة.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: Coherence vs Divergence -->
+        <h2 class="section-header">Section 4: Coherence vs Divergence (25%)</h2>
+        <p class="section-description">CRITICAL: Understanding SIMD execution logic.</p>
+
+        <!-- Question 6 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q6</span>
+                <span class="question-marks">18 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>CRITICAL: Explain Coherent Execution vs Divergent Execution in SIMD systems.</strong>
+                        </p>
+                        <div class="critical-box"
+                            style="background: rgba(251, 191, 36, 0.1); border: 1px solid var(--warning); padding: 10px; border-radius: 8px; margin: 10px 0; color: var(--warning);">
+                            ⚠️ IMPORTANT: This is about instruction stream coherence, NOT cache coherence!
+                        </div>
+                        <ol style="margin-top: 10px;">
+                            <li>Define Coherent Execution. Why is it efficient?</li>
+                            <li>Define Divergent Execution.</li>
+                            <li>Using the mask example (TTFTFFFF), explain the performance penalty.</li>
+                        </ol>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q6-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q6-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><strong>a) Coherent Execution:</strong></p>
+                            <ul>
+                                <li>All SIMD lanes execute the <strong>same instruction</strong> at the same time.</li>
+                                <li>Efficient because one Control Unit manages many ALUs (Amortized Control Overhead).
+                                    Utilization is 100%.</li>
+                            </ul>
+                            <p><strong>b) Divergent Execution:</strong></p>
+                            <ul>
+                                <li>Occurs in conditional blocks (If-Else) where threads in the same warp/group disagree
+                                    on the path.</li>
+                                <li>Some threads want to do "A", others want to do "B".</li>
+                            </ul>
+                            <p><strong>c) Penalty (Masking):</strong></p>
+                            <ul>
+                                <li>SIMD cannot do A and B simultaneously.</li>
+                                <li>It serializes: First, it executes "A" for True-threads (False-threads are
+                                    idle/masked). Then, it executes "B" for False-threads (True-threads idle).</li>
+                                <li><strong>Result:</strong> Utilization allows drops to 1/N in worst case. The hardware
+                                    capability is wasted on idle threads.</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>طابور العرض العسكري (SIMD Coherence): 💂‍♂️</strong></p>
+                            <ul>
+                                <li><strong>Coherent (متناغم):</strong> القائد بيقول "خطوة لليمين!". الـ 32 عسكري
+                                    (Threads) بيتحركوا لليمين في نفس اللحظة. المنظر عظيم والكفاءة 100%. أمر واحد حرك 32
+                                    شخص.</li>
+                            </ul>
+                            <p><strong>المصيبة (Divergence - التشتت):</strong></p>
+                            <ul>
+                                <li>لو القائد قال: "اللي لابس أحمر يروح يمين، واللي لابس أزرق يروح شمال".</li>
+                                <li>في نظام الـ SIMD، مينفعش الصف يتقسم.</li>
+                                <li><strong>الحل الاجباري (Masking):</strong> القائد هيقول "يا جماعة الأحمر يتحرك يمين..
+                                    والأزرق <strong>يقف مكانه ميتنفسش (Idle)</strong>". بعد ما الأحمر يخلص، القائد يقول
+                                    "دلوقتي الأحمر يقف ميتنفسش.. والأزرق يتحرك شمال".</li>
+                                <li><strong>النتيجة:</strong> بدل ما نخلص في خطوة واحدة، خلصنا في خطوتين، وفي كل خطوة
+                                    كان نص الجيش واقف عاطل بيتفرج. ده بيقتل الأداء (Performance penalty).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p><strong>📚 HPC Comprehensive Exam 2: Performance & Memory Systems</strong></p>
+        <p>Covering Lectures 3, 4, 5, 6</p>
+        <p style="margin-top: 15px; color: #64748b;">امتحان شامل - Focus on Analysis and Calculations</p>
+        <p style="margin-top: 10px; font-size: 0.9em;">Good Luck! 🚀</p>
+    </footer>
+
+    <script>
+        function toggleAnswer(id) {
+            const answer = document.getElementById(id);
+            answer.classList.toggle('show');
+            if (answer.classList.contains('show')) {
+                setTimeout(() => {
+                    answer.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+                }, 100);
+            }
+        }
+
+        // Keyboard shortcut: Ctrl+A to toggle all answers
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.key === 'a') {
+                e.preventDefault();
+                const answers = document.querySelectorAll('.qa-answer-block');
+                const allShown = Array.from(answers).every(a => a.classList.contains('show'));
+                answers.forEach(answer => {
+                    if (allShown) {
+                        answer.classList.remove('show');
+                    } else {
+                        answer.classList.add('show');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

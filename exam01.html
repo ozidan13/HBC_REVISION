@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPC Comprehensive Exam 1: Parallel Architecture Foundations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #c084fc;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
+        }
+
+        header h2 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 10px;
+        }
+
+        header .subtitle {
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .comprehensive-badge {
+            display: inline-block;
+            background: rgba(192, 132, 252, 0.1);
+            color: var(--accent);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-top: 20px;
+            border: 1px solid rgba(192, 132, 252, 0.2);
+        }
+
+        /* Q&A Interleaved Layout */
+        .qa-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .qa-pair {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            transition: transform 0.2s ease;
+        }
+
+        .qa-pair:hover {
+            transform: translateY(-2px);
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .qa-question {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .qa-answer-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .qa-answer-block {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .qa-english,
+        .qa-arabic {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+            height: 100%;
+        }
+
+        .qa-english {
+            border-left: 3px solid var(--primary);
+        }
+
+        .qa-arabic {
+            direction: rtl;
+            font-family: 'Cairo', sans-serif;
+            border-right: 3px solid var(--success);
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        /* Legacy labels support just in case, though we omitted them */
+        .label-eng,
+        .label-ar {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.7;
+        }
+
+        .label-eng {
+            color: var(--primary);
+        }
+
+        .label-ar {
+            color: var(--success);
+        }
+
+        /* General Question Container Styles */
+        .question {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 35px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .question::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0.8;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .question-number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            font-size: 1.2rem;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            font-weight: 700;
+        }
+
+        .question-marks {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        /* Utilities */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #09090b !important;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+        }
+
+        .highlight {
+            color: var(--warning);
+            font-weight: bold;
+            background: rgba(251, 191, 36, 0.1);
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        .section-header {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            padding: 25px;
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 16px;
+            border-left: 4px solid var(--secondary);
+            font-size: 1.05rem;
+        }
+
+        /* Exam Info Box */
+        .exam-info {
+            background: var(--glass-bg);
+            border-radius: 24px;
+            padding: 35px;
+            margin-bottom: 50px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .exam-info h3 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-item span {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 25px 0;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 18px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .comparison-table th {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Coverage Section */
+        .coverage-section {
+            background: rgba(30, 41, 59, 0.2);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 50px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .coverage-section h3 {
+            font-size: 1.4rem;
+            margin-bottom: 25px;
+            color: var(--accent);
+        }
+
+        .coverage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .coverage-card {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .coverage-card h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .coverage-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .coverage-card li {
+            padding: 10px 0;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .coverage-card li:last-child {
+            border-bottom: none;
+        }
+
+        .coverage-card li::before {
+            content: "✓";
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        /* Taxonomy Specifics */
+        .taxonomy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .taxonomy-box {
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.4);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .taxonomy-box:hover {
+            transform: translateY(-5px);
+            background: rgba(30, 41, 59, 0.6);
+        }
+
+        .taxonomy-box h4 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 80px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            padding-top: 40px;
+            border-top: 1px solid var(--glass-border);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 HPC Comprehensive Exam 1</h1>
+            <h2>Parallel Architecture Foundations</h2>
+            <p class="subtitle">Flynn's Taxonomy + Multicore Architecture + Programming Models</p>
+            <div class="comprehensive-badge">امتحان شامل - Comprehensive Exam</div>
+        </header>
+
+        <div class="exam-info">
+            <h3>📋 Exam Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Total Questions:</strong>
+                    <span>15 Questions</span>
+                </div>
+                <div class="info-item">
+                    <strong>Total Marks:</strong>
+                    <span>75 Marks</span>
+                </div>
+                <div class="info-item">
+                    <strong>Time Allowed:</strong>
+                    <span>120 Minutes</span>
+                </div>
+                <div class="info-item">
+                    <strong>Format:</strong>
+                    <span>NO MCQs - Definitions, Comparisons, Analysis</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="coverage-section">
+            <h3>📚 Exam Coverage (Lectures 1 & 2)</h3>
+            <div class="coverage-grid">
+                <div class="coverage-card">
+                    <h4>Lecture 1: Flynn's Taxonomy & Parallel Machines</h4>
+                    <ul>
+                        <li>Flynn's 4 Categories (SISD, SIMD, MISD, MIMD)</li>
+                        <li>SMP vs MPP Architecture</li>
+                        <li>Clusters & Grid Computing</li>
+                        <li>Memory Organization</li>
+                        <li>Communication Mechanisms</li>
+                    </ul>
+                </div>
+                <div class="coverage-card">
+                    <h4>Lecture 2: Multicores & Programming Models</h4>
+                    <ul>
+                        <li>Multi-core Technology Evolution</li>
+                        <li>HT vs Multi-core</li>
+                        <li>Stream Processing (Streams & Kernels)</li>
+                        <li>OpenMP Directives</li>
+                        <li>MPI Message Passing</li>
+                        <li>GPU Architectures (Cell, G80)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 1: FLYNN'S TAXONOMY -->
+        <div class="section section-flynn">
+            <h2 class="section-header">Section 1: Flynn's Taxonomy (25%)</h2>
+            <div class="section-description">
+                Understanding the fundamental classification of computer architectures based on instruction and data
+                streams
+            </div>
+
+            <!-- Question 1 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 1</span>
+                    <span class="question-marks">10 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Define Flynn's Taxonomy and explain each of the four categories with their
+                            characteristics.</strong></p>
+
+                    <div class="qa-container">
+                        <!-- Part A: Flynn's Taxonomy -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>1. What is Flynn's Taxonomy? (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p>Flynn's Taxonomy is a <span class="highlight">classification system for computer
+                                            architectures</span> proposed by Michael J. Flynn. It categorizes computers
+                                        based on two dimensions:</p>
+                                    <ul>
+                                        <li><strong>Instruction Stream:</strong> Single or Multiple</li>
+                                        <li><strong>Data Stream:</strong> Single or Multiple</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p>ده نظام تصنيف للكمبيوترات بيقسمها حسب محورين أساسيين:</p>
+                                    <ul>
+                                        <li>هل الكمبيوتر بينفذ أمر واحد ولا أوامر كتير في نفس الوقت؟ (Instruction
+                                            Stream)</li>
+                                        <li>هل بيشتغل على معلومة واحدة ولا بيانات كتير؟ (Data Stream)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part B: SISD -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>2. SISD (Single Instruction Single Data) (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>Definition:</strong> One instruction stream operates on one data
+                                            stream.</li>
+                                        <li><strong>Characteristics:</strong> Sequential execution (Von Neumann), no
+                                            parallelism.</li>
+                                        <li><strong>Examples:</strong> Early CPUs, simple microcontrollers.</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>(أمر واحد، داتا واحدة):</strong> ده الكمبيوتر التقليدي القديم. زي طابور،
+                                        بيعمل حاجة واحدة بس في المرة. مفيش أي توازي (Parallelism) هنا.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part C: SIMD -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>3. SIMD (Single Instruction Multiple Data) (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>Definition:</strong> One instruction stream operates on multiple
+                                            data streams simultaneously.</li>
+                                        <li><strong>Characteristics:</strong> Same operation on different data
+                                            (Data-level parallelism), lockstep execution.</li>
+                                        <li><strong>Examples:</strong> Vector processors, GPU shader cores, SSE/AVX.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>(أمر واحد، داتا كتير):</strong> زي "المايسترو" اللي بيدي إشارة واحدة وكل
+                                        العازفين بينفذوها. معالج واحد بيدي أمر (مثلاً "اجمع")، ومجموعة وحدات تنفيذ بتنفذ
+                                        الأمر ده على بيانات كتير في نفس اللحظة. ده أساس شغل الجرافيكس (GPUs).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part D: MISD -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>4. MISD (Multiple Instruction Single Data) (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>Definition:</strong> Multiple instruction streams operate on a
+                                            single data stream.</li>
+                                        <li><strong>Characteristics:</strong> Very rare, mainly theoretical. Used in
+                                            fault tolerance.</li>
+                                        <li><strong>Examples:</strong> Space Shuttle flight control computers
+                                            (redundancy check).</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>(أوامر كتير، داتا واحدة):</strong> ده نوع نادراً ما بنشوفه. تخيل كذا
+                                        دكتور (Processors) بيشخصوا نفس المريض (Data) في نفس الوقت عشان يتأكدوا من
+                                        النتيجة. بيستخدموه في حاجات حساسة زي الطيارات عشان الأمان (Fault Tolerance).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part E: MIMD -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>5. MIMD (Multiple Instruction Multiple Data) (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>Definition:</strong> Multiple instruction streams operate on
+                                            multiple data streams independently.</li>
+                                        <li><strong>Characteristics:</strong> True parallel processing, asynchronous
+                                            execution, most flexible.</li>
+                                        <li><strong>Examples:</strong> Modern Multi-core CPUs, Clusters, Supercomputers.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>(أوامر كتير، داتا كتير):</strong> ده "الكل في الكل". كل معالج شغال بمزاجه
+                                        (Asynchronous) وبياخد أوامر مختلفة وبيانات مختلفة. ده النظام اللي شغالين بيه
+                                        دلوقتي في اللابتوبات والسوبر كمبيوتر.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 2</span>
+                    <span class="question-marks">8 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Compare SISD and SIMD architectures in terms of execution pattern and
+                            applications.</strong></p>
+
+                    <div class="qa-container">
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Comparison Table</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <table class="comparison-table">
+                                        <tr>
+                                            <th>Aspect</th>
+                                            <th>SISD</th>
+                                            <th>SIMD</th>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Instruction Stream</strong></td>
+                                            <td>Single</td>
+                                            <td>Single</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Data Stream</strong></td>
+                                            <td>Single</td>
+                                            <td>Multiple</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Parallelism</strong></td>
+                                            <td>None (Sequential)</td>
+                                            <td>Data-Level Parallelism</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Throughput</strong></td>
+                                            <td>1 op/cycle</td>
+                                            <td>N ops/cycle (Vector Width)</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>جدول المقارنة:</strong></p>
+                                    <p>الفرق الأساسي إن <strong>SISD</strong> زي العامل الواحد اللي بيشيل طوبة طوبة.</p>
+                                    <p>أما <strong>SIMD</strong> زي الونش العريض اللي بيشيل صف طوب كامل في مرة واحدة.
+                                    </p>
+                                    <p>الـ SIMD أسرع بكتير لو عندك بيانات كتير محتاجة نفس المعاملة (زي تعديل ألوان
+                                        صورة).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Part A: Execution Pattern Differences (3 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>SISD:</strong> Fetches one instruction and processes one data element
+                                        sequentially. (e.g., <code>for loop</code> processing one item at a time).</p>
+                                    <p><strong>SIMD:</strong> Fetches one instruction and broadcasts it to multiple
+                                        processing elements to process multiple data items simultaneously. (e.g., Vector
+                                        add <code>C[0..7] = A[0..7] + B[0..7]</code>).</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>في التنفيذ:</strong></p>
+                                    <p>الـ <strong>SISD</strong> ماشي بالدور، خطوة خطوة. بيخلص العملية الأولى وبعدين يخش
+                                        على التانية.</p>
+                                    <p>الـ <strong>SIMD</strong> بيشتغل "جملة". ضربة واحدة بتنفذ العملية على 8 أو 16
+                                        عنصر داتا في نفس اللحظة (Synchronous).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Part B & C: Performance & Applications (5 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>Performance:</strong> SIMD offers theoretical speedup proportional to
+                                        vector width (N times faster) for data-parallel tasks, whereas SISD is limited
+                                        by clock speed and IPC.</p>
+                                    <p><strong>Applications:</strong></p>
+                                    <ul>
+                                        <li><strong>SISD:</strong> General OS tasks, word processing, control logic.
+                                        </li>
+                                        <li><strong>SIMD:</strong> Multimedia (Image/Video processing), Scientific
+                                            simulations, Graphics rendering.</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>الأداء والتطبيقات:</strong></p>
+                                    <p>الـ SIMD طبعاً أسرع بكتير في الحاجات الحسابية التقيلة.</p>
+                                    <p>بنستخدم <strong>SISD</strong> في البرامج العادية زي الكتابة والتصفح.</p>
+                                    <p>وبنستخدم <strong>SIMD</strong> في الألعاب، الفيديوهات، والفوتوشوب، أي حاجة فيها
+                                        Pixels كتير أو حسابات هندسية.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: PARALLEL MACHINES -->
+        <div class="section section-machines">
+            <h2 class="section-header">Section 2: Parallel Machines Architecture (25%)</h2>
+            <div class="section-description">
+                Comparing different parallel machine architectures: SMP, MPP, Clusters, and Grid Computing
+            </div>
+
+            <!-- Question 3 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 3</span>
+                    <span class="question-marks">12 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Compare Symmetric Multiprocessors (SMP) and Massively Parallel Processors (MPP)
+                            architectures.</strong></p>
+
+                    <div class="qa-container">
+                        <!-- Definitions -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>1. Definitions (4 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>SMP (Symmetric Multiprocessor):</strong> A parallel architecture where
+                                        multiple identical processors share a single, unified main memory (UMA). All
+                                        processors have equal access to resources.</p>
+                                    <p><strong>MPP (Massively Parallel Processor):</strong> An architecture with
+                                        hundreds/thousands of processors, each having its own private local memory
+                                        (Distributed Memory). No shared memory exists.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>الفرق في المفهوم:</strong></p>
+                                    <p><strong>SMP:</strong> "الكل في واحد". زي صينية أكل كبيرة (Shared Memory) وكل
+                                        الناس (Processors) بتاكل منها في نفس الوقت. كلهم زي بعض بالظبط.</p>
+                                    <p><strong>MPP:</strong> "كل واحد في حاله". كل معالج معاه طبقه الخاص (Local Memory).
+                                        ومحدش بيشوف طبق التاني إلا لو بعت له رسالة.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Memory Organization -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>2. Memory Organization (3 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <table class="comparison-table">
+                                        <tr>
+                                            <th>Feature</th>
+                                            <th>SMP</th>
+                                            <th>MPP</th>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Type</strong></td>
+                                            <td>Shared Memory (UMA)</td>
+                                            <td>Distributed Memory (NORMA)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Address Space</strong></td>
+                                            <td>Single Global Address Space</td>
+                                            <td>Private Address Space per Node</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>coherence</strong></td>
+                                            <td>Requires Hardware Cache Coherence</td>
+                                            <td>No Cache Coherence (Software managed)</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>تنظيم الميموري:</strong></p>
+                                    <p>في <strong>SMP</strong>: أي معالج يقدر يقرأ من أي مكان في الرامات، لأنها حتة
+                                        واحدة مشتركة.</p>
+                                    <p>في <strong>MPP</strong>: كل معالج ملك الميموري بتاعته وبس. مينفعش يقرا ميموري
+                                        جاره مباشرة، لازم يطلبها منه.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Communication -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>3. Communication Mechanisms (3 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>SMP:</strong> Communicates via shared variables in memory.
+                                            Synchronization uses locks/semaphores. Low latency but bus contention
+                                            issues.</li>
+                                        <li><strong>MPP:</strong> Communicates via Message Passing (MPI). Explicit
+                                            Send/Receive operations over a network. Higher latency but better isolation.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>طريقة الكلام (Communication):</strong></p>
+                                    <p><strong>SMP:</strong> بيكلموا بعض عن طريق "تغيير القيم". معالج يكتب قيمة في متغير
+                                        مشترك، والتاني يقراها.</p>
+                                    <p><strong>MPP:</strong> بيكلموا بعض بـ "الرسايل". زي شات واتساب، معالج يبعت داتا
+                                        (Send) والتاني يستقبلها (Receive) عبر الشبكة.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scalability -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>4. Scalability (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>SMP:</strong> Limited scalability (2-64 processors) due to memory bus
+                                        bottleneck and cache coherence traffic.</p>
+                                    <p><strong>MPP:</strong> Highly scalable (thousands/millions of nodes) because
+                                        typical memory constraints are avoided by distributing it.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>القابلية للتوسع (Scalability):</strong></p>
+                                    <p><strong>SMP:</strong> آخره ضيق. مبينفعش نزود معالجات كتير (يا دوب 32 أو 64) عشان
+                                        "الزحمة" على الرامات المشتركة.</p>
+                                    <p><strong>MPP:</strong> مفتوح معاك. ممكن توصل لملايين المعالجات، لأن كل واحد معاه
+                                        حاجته ومفيش خناقة على مورد واحد.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 4</span>
+                    <span class="question-marks">7 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain Clusters and Grid Computing.</strong></p>
+
+                    <div class="qa-container">
+                        <!-- Clusters -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>1. Computer Clusters (3 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>Definition:</strong> A collection of independent, commodity computers
+                                        (nodes) connected via a high-speed local network (LAN) to work as a single
+                                        integrated computing resource.</p>
+                                    <ul>
+                                        <li><strong>Hardware:</strong> Homogeneous (mostly identical).</li>
+                                        <li><strong>Management:</strong> Centralized (Single System Image).</li>
+                                        <li><strong>Example:</strong> Beowulf clusters.</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>الـ Cluster (العنقود):</strong></p>
+                                    <p>شوية أجهزة كمبيوتر عادية (Commodity Hardware) موجودين مع بعض في نفس المكان (أوضة
+                                        أو داتا سنتر). موصلينهم ببعض بكابلات سريعة جداً عشان يشتغلوا كأنهم "كمبيوتر
+                                        عملاق واحد".</p>
+                                    <p>الأجهزة غالباً بتكون شبه بعضه (Homogeneous) وليها مدير واحد (Centralized).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid Computing -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>2. Grid Computing (4 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>Definition:</strong> A distributed paradigm that coordinates
+                                        geographically dispersed resources (computers, storage, instruments) from
+                                        multiple administrative domains to solve large-scale problems.</p>
+                                    <ul>
+                                        <li><strong>Scale:</strong> Global/Wide Area Network (WAN).</li>
+                                        <li><strong>Heterogeneity:</strong> Different hardware, OS, and policies.</li>
+                                        <li><strong>Example:</strong> SETI@home, CERN LHC Grid.</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>الـ Grid (الشبكة):</strong></p>
+                                    <p>أكبر بكتير. دي موارد متوزعة على مستوى العالم (Geographically Dispersed). سيرفر في
+                                        مصر، على لابتوب في أمريكا، على داتا سنتر في اليابان.</p>
+                                    <p>بيشتركوا عشان يحلوا مشكلة علمية معقدة. الأجهزة مختلفة تماماً عن بعض
+                                        (Heterogeneous) وكل جهة ليها إدارتها الخاصة.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comparison Brief -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Difference Summary</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>Cluster:</strong> Same location, same hardware, one owner, tightly
+                                        coupled.</p>
+                                    <p><strong>Grid:</strong> Different locations, different hardware, multiple owners,
+                                        loosely coupled.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>الخلاصة:</strong></p>
+                                    <p>الـ Cluster "فريق عمل في مكتب واحد".</p>
+                                    <p>الـ Grid "فري لانسرز من كل حتة في العالم شغالين على مشروع واحد".</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: MULTICORE ARCHITECTURE -->
+        <div class="section section-multicore">
+            <h2 class="section-header">Section 3: Multicore Architecture (25%)</h2>
+            <div class="section-description">
+                Evolution from single-core to multi-core processors and the architectural differences
+            </div>
+
+            <!-- Question 5 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 5</span>
+                    <span class="question-marks">10 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain the evolution of multi-core technology as presented in the lecture.</strong></p>
+
+                    <div class="qa-container">
+                        <!-- Four Stages -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>1. Four Stages of Evolution (4 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ol>
+                                        <li><strong>Single-threading:</strong> One task processes at a time. No
+                                            parallelism.</li>
+                                        <li><strong>Multitasking/Multithreading:</strong> Two or more tasks execute via
+                                            time-slicing (context switching).</li>
+                                        <li><strong>Simultaneous Multithreading (HT):</strong> Single physical processor
+                                            executes two threads by sharing execution resources.</li>
+                                        <li><strong>Multi-core:</strong> Two or more complete physical execution cores
+                                            on a single chip. True parallel execution.</li>
+                                    </ol>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>تطور التكنولوجيا في 4 مراحل:</strong></p>
+                                    <p><strong>1. Single-threading:</strong> زي موظف واحد بيخلص ورقة ورقة. مبيعملش أي
+                                        حاجة تانية لحد ما يخلص اللي في إيده.</p>
+                                    <p><strong>2. Multitasking:</strong> الموظف بقى شاطر، بيشتغل شوية في الورقة دي وشوية
+                                        في الورقة دي بسرعة، فتحس إنه بيعملهم مع بعض (بس هو لسه واحد).</p>
+                                    <p><strong>3. Hyper-Threading (SMT):</strong> الموظف بقاله "إيدين" (Registers sets).
+                                        بيستغل الوقت اللي مستني فيه إمضاء المدير عشان يجهز ورقة تانية. لسه مخ واحد، بس
+                                        استغلال أحسن للموارد.</p>
+                                    <p><strong>4. Multi-core:</strong> جبنا موظفين بجد (Cores). كل واحد بمكتبه وشغله. ده
+                                        الـ Top، شغل متوازي بجد.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- HT vs Multi-core -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>2. Hyper-Threading vs Multi-core (6 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <table class="comparison-table">
+                                        <tr>
+                                            <th>Feature</th>
+                                            <th>Hyper-Threading (SMT)</th>
+                                            <th>Multi-core</th>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Mechanism</strong></td>
+                                            <td>Logical splitting of one physical core</td>
+                                            <td>Physical duplication of cores</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Resources</strong></td>
+                                            <td>Shares execution units (ALU, FPU)</td>
+                                            <td>Dedicated execution units per core</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Performance</strong></td>
+                                            <td>15-30% improvement (better utilizaton)</td>
+                                            <td>Nearly 100% improvement per core (true scaling)</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>الفرق بينهم:</strong></p>
+                                    <p><strong>Hyper-Threading:</strong> "وهم" (Logical). هو كور واحد بنضحك بيه على
+                                        الويندوز ونقوله أنا اتنين. مفيد لما يكون الكور عطلان مستني داتا من الرامات،
+                                        فنشغله في حاجة تانية.</p>
+                                    <p><strong>Multi-core:</strong> "حقيقة" (Physical). عندك كور وتاني وتالت. كل واحد
+                                        عنده الـ ALU بتاعته والكاش بتاعته. ده أداء مضاعف فعلاً.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 6 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 6</span>
+                    <span class="question-marks">6 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Define Multi-core CPU, Cache Organization, and Effectiveness Condition.</strong></p>
+
+                    <div class="qa-container">
+                        <!-- Definition -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>1. Multi-core Definition (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p>Combines two or more independent cores into a single package composed of a single
+                                        die (chip). Each core allows for a distinct instruction stream.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>تعريفه:</strong> ببساطة، إننا نحط أكتر من "مخ" (Core) داخل شريحة سيليكون
+                                        واحدة (Single Chip). كل مخ يقدر يفكر وينفذ برنامج لوحده.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cache Org -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>2. Cache Organization Options (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>Shared Cache (e.g., L2/L3):</strong> Cores share the cache. Pros:
+                                            Dynamic allocation, No data duplication. Cons: Contention.</li>
+                                        <li><strong>Private Cache (e.g., L1/L2):</strong> Each core has its own. Pros:
+                                            Fast, no contention. Cons: Redundant data storage, coherence complexity.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>تنظيم الكاش (Cache):</strong></p>
+                                    <p><strong>Shared (مشتركة):</strong> تلاجة كبيرة الكل بياكل منها. توفير مساحة ومفيش
+                                        تكرار، بس ممكن يحصل "زحمة" عليها.</p>
+                                    <p><strong>Private (خاصة):</strong> كل واحد عنده تلاجته الصغيرة في مكتبه. محدش
+                                        بيضايقه، بس ممكن نشتري نفس علبة اللبن مرتين (تضيع مساحة).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Effectiveness -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>3. Effectiveness Condition (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="warning-box">
+                                        "A system with <strong>n cores</strong> is effective only when it is presented
+                                        with <strong>n or more threads</strong> concurrently."
+                                    </div>
+                                    <p>If Threads < Cores, some cores will be idle, wasting hardware resources.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>شرط الفاعلية:</strong></p>
+                                    <p>عشان نطلع قماش من الـ Multi-core (مثلاً 4 كور)، لازم يكون عندنا شغل (Threads)
+                                        يكفيهم كلهم (4 أو أكتر).</p>
+                                    <p>لو شغلت برنامج واحد (Single Thread) على جهاز 8 كور، فيه 1 بيشتغل و 7 بيتفرجوا
+                                        عليه. (خسارة فلوس وهاردوير).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: PROGRAMMING MODELS -->
+        <div class="section section-programming">
+            <h2 class="section-header">Section 4: Programming Models (25%)</h2>
+            <div class="section-description">
+                Understanding OpenMP, MPI, and stream processing concepts for parallel programming
+            </div>
+
+            <!-- Question 7 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 7</span>
+                    <span class="question-marks">10 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain OpenMP parallel programming model using the code below.</strong></p>
+
+                    <div class="code-block" dir="ltr">
+                        <span class="keyword">!$OMP PARALLEL DO</span> <span class="function">SHARED</span>(A,B,C,N)
+                        <span class="function">PRIVATE</span>(I,TEMP)
+                        <span class="keyword">do</span> I=1, N
+                        TEMP = A(I)+B(I)
+                        C(I) = TEMP
+                        TEMP = SQRT(TEMP)
+                        <span class="keyword">end do</span>
+                        <span class="keyword">!$OMP END PARALLEL DO</span>
+                    </div>
+
+                    <div class="qa-container">
+                        <!-- Model -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>1. Programming Model (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>Model:</strong> Shared Memory Parallel Programming.</li>
+                                        <li><strong>Features:</strong> Fork-join model, Directive-based, Implicit
+                                            synchronization.</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>نوع البرمجة:</strong> Shared Memory (ذاكرة مشتركة). يعني البروسيسورز كلهم
+                                        شايفين نفس الرامات، وبنستخدم Directives (أوامر بتبدأ بـ #pragma أو !$) عشان نقول
+                                        للكمبايلر "قسم الشغل ده".</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SHARED Clause -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>2. SHARED(A,B,C,N) Clause (3 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>Purpose:</strong> Declares that variables A, B, C, and N are accessible
+                                        by all threads. Only one instance exists in memory.</p>
+                                    <p><strong>Reason:</strong> A/B are input arrays, C is output array, N is loop
+                                        limit. All threads need common access to these.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>معنى SHARED:</strong> يعني المتغيرات دي "على المشاع". نسخة واحدة بس في
+                                        الذاكرة والكل بيقرأ ويكتب فيها.</p>
+                                    <p>زي "السبورة" في الفصل، المدرس والطلبة شايفين نفس السبورة.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PRIVATE Clause -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>3. PRIVATE(TEMP) Clause (3 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <p><strong>Purpose:</strong> Each thread gets its own independent copy of TEMP.</p>
+                                    <p><strong>Reason:</strong> TEMP is used for intermediate calculation inside the
+                                        loop. If shared, threads would overwrite each other's values.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>معنى PRIVATE:</strong> يعني كل Thread معاه نسخته الخاصة. زي "الكشكول"
+                                        بتاع الطالب، محدش بيكتب فيه غيره.</p>
+                                    <p><strong>ليه TEMP لازم يبقى خاص؟</strong> عشان لو كان مشترك، Thread 1 يحسب رقم،
+                                        ييجي Thread 2 يغيره قبل ما Thread 1 يلحق يستخدمه. (لخبطة).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Race Condition -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>4. If TEMP were SHARED? (2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="warning-box">⚠️ <strong>Race Condition:</strong> Threads will
+                                        continuously overwrite the single shared TEMP variable, leading to incorrect and
+                                        non-deterministic results.</div>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>لو كان Shared:</strong> هتحصل كارثة اسمها <strong>Race
+                                            Condition</strong>.</p>
+                                    <p>تخيل 2 بيحاولوا يكتبوا على نفس السطر في نفس الكشكول في نفس الوقت. الكلام هيدخل في
+                                        بعضه والنتيجة هتبقى غلط وعشوائية.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 8 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 8</span>
+                    <span class="question-marks">8 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Compare shared memory (OpenMP) and distributed memory (MPI) programming models.</strong>
+                    </p>
+
+                    <div class="qa-container">
+                        <!-- Comparison Table -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Comparison Table</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <table class="comparison-table">
+                                        <tr>
+                                            <th>Aspect</th>
+                                            <th>OpenMP (Shared Memory)</th>
+                                            <th>MPI (Distributed Memory)</th>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Memory View</strong></td>
+                                            <td>Shared address space (All see same vars)</td>
+                                            <td>Private address spaces (No direct access to others)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Communication</strong></td>
+                                            <td>Read/Write shared variables</td>
+                                            <td>Explicit Message Passing (Send/Recv)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Hardware</strong></td>
+                                            <td>Multi-core CPU, SMP</td>
+                                            <td>Clusters, Distributed Systems</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Difficulty</strong></td>
+                                            <td>Easier (Incremental parallelization)</td>
+                                            <td>Harder (Requires code restructuring)</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>مقارنة سريعة:</strong></p>
+                                    <p><strong>OpenMP:</strong> زي فريق عمل قاعدين كلهم على نفس "الطرابيزة" (Shared
+                                        Memory). أي حد يكتب ورقة يحطها على الطرابيزة الكل يشوفها. سهل وسريع بس محتاجين
+                                        يبقوا في نفس المبنى (Computer).</p>
+                                    <p><strong>MPI:</strong> زي فريق عمل كل واحد في "فرع" مختلف (Distributed). عشان
+                                        يكلموا بعض لازم يبعتوا "إيميلات" (Messages). أصعب وشغل أكتر، بس ينفع لو الفريق
+                                        كبير جداً وموزع على مدن كتير (Cluster).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>When to use each?</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>OpenMP:</strong> Desktop apps, Moderate parallelism, Shared data
+                                            structures.</li>
+                                        <li><strong>MPI:</strong> Weather simulation, Molecular dynamics, Massive
+                                            scalability requirements.</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>إيمتى نستخدم ده وده؟</strong></p>
+                                    <p>لو مشروعك يخلص على جهازك الشخصي بس عايز تسرعه شوية -> <strong>OpenMP</strong>.
+                                    </p>
+                                    <p>لو مشروعك ضخم (تنبؤ بالطقس للعالم كله) ومحتاج 100 جهاز يشتغلوا مع بعض ->
+                                        <strong>MPI</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 9 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 9</span>
+                    <span class="question-marks">6 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain stream processing paradigm.</strong></p>
+
+                    <div class="qa-container">
+                        <!-- Definitions -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>1. Streams and Kernels (3 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>Stream:</strong> A sequence of data elements of the same type (e.g.,
+                                            pixels, vertices) that are processed independently.</li>
+                                        <li><strong>Kernel:</strong> A small program/function applied to each element of
+                                            the stream.</li>
+                                        <li><strong>Concept:</strong> Input Stream -> Apply Kernel -> Output Stream.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>الفكرة:</strong></p>
+                                    <p>تخيل "خط إنتاج" في مصنع (Stream). فيه ازايز كتير ماشية ورا بعض.</p>
+                                    <p>فيه "عامل" أو "ماكينة" (Kernel) شغلتها الوحيدة إنها تحط الغطا على الإزازة.</p>
+                                    <p>العملية بتتكرر على كل العناصر بنفس الشكل وبسرعة رهيبة.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hardware -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>2. Hardware Examples (3 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <ul>
+                                        <li><strong>GPUs (Graphics Processing Units):</strong> E.g., NVIDIA GeForce.
+                                            Massively parallel, thousands of cores ideal for streams (pixels).</li>
+                                        <li><strong>DSPs (Digital Signal Processors):</strong> For audio/video streams.
+                                        </li>
+                                        <li><strong>Cell Broadband Engine:</strong> (PS3 Processor) optimized for media
+                                            streams.</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <p><strong>أمثلة هاردوير:</strong></p>
+                                    <p><strong>كارت الشاشة (GPU):</strong> ده "المعلم" في الحوار ده. عنده آلاف العمال
+                                        الصغيرين اللي يقدروا يلونوا ملايين الـ Pixels في الشاشة في جزء من الثانية.</p>
+                                    <p><strong>DSPs:</strong> بتوع الصوت والإشارة، دول متخصصين في دوشة الإشارات
+                                        المتتالية.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <footer>
+        <p><strong>📚 HPC Comprehensive Exam 1: Parallel Architecture Foundations</strong></p>
+        <p>Covering Lectures 1 & 2: Flynn's Taxonomy, Parallel Machines, Multicore Architecture, Programming Models
+        </p>
+        <p style="margin-top: 15px; color: #64748b;">امتحان شامل - Focus on architectural foundations and
+            programming paradigms</p>
+        <p style="margin-top: 10px; font-size: 0.9em;">Good Luck! 🚀</p>
+    </footer>
+    </div>
+
+    <script>
+        function toggleAnswer(id) {
+            const answer = document.getElementById(id);
+            answer.classList.toggle('show');
+            if (answer.classList.contains('show')) {
+                setTimeout(() => {
+                    answer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        }
+
+        // Keyboard shortcut: Ctrl+A to toggle all answers
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.key === 'a') {
+                e.preventDefault();
+                const answers = document.querySelectorAll('.answer');
+                const allShown = Array.from(answers).every(a => a.classList.contains('show'));
+                answers.forEach(answer => {
+                    if (allShown) {
+                        answer.classList.remove('show');
+                    } else {
+                        answer.classList.add('show');
+                    }
+                });
+            }
+        });
+
+        // Print preparation: show all answers
+        window.addEventListener('beforeprint', function () {
+            document.querySelectorAll('.answer').forEach(answer => {
+                answer.classList.add('show');
+            });
+        });
+
+        // Smooth scroll for answer buttons
+        document.querySelectorAll('.answer-button').forEach(button => {
+            button.addEventListener('click', function () {
+                setTimeout(() => {
+                    this.nextElementSibling.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+                }, 150);
+            });
+        });
+    </script>
+</body>
+
+</html>

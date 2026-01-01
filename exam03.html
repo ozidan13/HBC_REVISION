@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPC Comprehensive Exam 3: CUDA Programming</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #c084fc;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+            --info: #06b6d4;
+            /* Cyan for Exam 3 theme */
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--info), transparent);
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--info), var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 40px rgba(6, 182, 212, 0.2);
+        }
+
+        header h2 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 10px;
+        }
+
+        header .subtitle {
+            font-size: 1.1rem;
+            color: var(--info);
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* Q&A Interleaved Layout */
+        .qa-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .qa-pair {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            transition: transform 0.2s ease;
+        }
+
+        .qa-pair:hover {
+            transform: translateY(-2px);
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .qa-question {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .qa-answer-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+            display: none;
+            /* Hidden by default */
+            animation: slideDown 0.4s ease;
+        }
+
+        .qa-answer-block.show {
+            display: grid;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .qa-answer-block {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .qa-english,
+        .qa-arabic {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+            height: 100%;
+        }
+
+        .qa-english {
+            border-left: 3px solid var(--info);
+        }
+
+        .qa-arabic {
+            direction: rtl;
+            font-family: 'Cairo', sans-serif;
+            border-right: 3px solid var(--success);
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        .label-eng {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.7;
+            color: var(--info);
+        }
+
+        .label-ar {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.7;
+            color: var(--success);
+        }
+
+        /* General Question Container Styles */
+        .question-block {
+            margin-bottom: 60px;
+        }
+
+        .question-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--info);
+            font-size: 1.1rem;
+            background: rgba(6, 182, 212, 0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            font-weight: 700;
+        }
+
+        .question-marks {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .answer-button {
+            background: linear-gradient(135deg, var(--info), var(--primary));
+            color: #fff;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        .answer-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4);
+        }
+
+        .section-header {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 60px 0 30px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            border-left: 5px solid var(--info);
+            padding-left: 20px;
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+
+        /* Utilities */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent);
+            font-size: 0.9em;
+            direction: ltr;
+            /* Force LTR for code in Arabic text */
+            display: inline-block;
+        }
+
+        pre {
+            background: #09090b !important;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+            direction: ltr;
+            text-align: left;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .qa-arabic ul {
+            padding-right: 20px;
+            padding-left: 0;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* Accessing specific colors for highlighting */
+        .highlight {
+            color: var(--warning);
+            font-weight: bold;
+        }
+
+        .formula-box {
+            background: rgba(6, 182, 212, 0.1);
+            border: 2px solid rgba(6, 182, 212, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            color: #a5f3fc;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 20px 40px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 80px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 HPC Comprehensive Exam 3</h1>
+            <h2>CUDA Programming</h2>
+            <p class="subtitle">Thread Hierarchy, Memory Model, Add Vector Implementation</p>
+        </header>
+
+        <div class="section-description" style="text-align: center;">
+            <p><strong>Total Marks:</strong> 75 | <strong>Time:</strong> 120 Minutes | <strong>Format:</strong> Code
+                Analysis, Definitions, Calculations</p>
+        </div>
+
+        <!-- SECTION 1: CUDA THREAD HIERARCHY -->
+        <h2 class="section-header">Section 1: CUDA Thread Hierarchy (30%)</h2>
+        <p class="section-description">Understanding the three-level thread organization: Grid, Blocks, and Threads</p>
+
+        <!-- Question 1 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q1</span>
+                <span class="question-marks">12 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Explain the CUDA thread hierarchy in detail.</strong></p>
+                        <ol style="margin-top: 10px;">
+                            <li>Describe the three levels: Grid, Block, Thread.</li>
+                            <li>Explain all built-in variables: <code>threadIdx</code>, <code>blockIdx</code>,
+                                <code>blockDim</code>, <code>gridDim</code>.</li>
+                            <li>Why are threads organized in blocks?</li>
+                        </ol>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q1-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q1-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><strong>a) Three Levels:</strong></p>
+                            <ul>
+                                <li><strong>Thread:</strong> Smallest unit of execution. Identified by ID.</li>
+                                <li><strong>Block:</strong> Group of threads running on one Streaming Multiprocessor
+                                    (SM). Can start up to 1024 threads. Threads in a block can share memory.</li>
+                                <li><strong>Grid:</strong> Collection of blocks. Represents the entire kernel launch.
+                                </li>
+                            </ul>
+                            <p><strong>b) Variables:</strong></p>
+                            <ul>
+                                <li><code>threadIdx</code>: ID of thread inside block (rank).</li>
+                                <li><code>blockIdx</code>: ID of block inside grid.</li>
+                                <li><code>blockDim</code>: Size of block (how many threads).</li>
+                                <li><code>gridDim</code>: Size of grid (how many blocks).</li>
+                            </ul>
+                            <p><strong>c) Why Blocks?</strong> Scalability. Hardware can run blocks in any order on any
+                                available SM. This allows the same code to run on small GPUs (few SMs) and large GPUs
+                                (many SMs).</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>الجيش والكتيبة (Thread Hierarchy): 🪖</strong></p>
+                            <ul>
+                                <li><strong>الجيش كله (Grid):</strong> دي المهمة الكاملة اللي رايحة تحارب.</li>
+                                <li><strong>الكتيبة (Block):</strong> الجيش متقسم كتايب. كل كتيبة مستقلة وبتمشي مع بعض،
+                                    وليها قائد.</li>
+                                <li><strong>العسكري (Thread):</strong> أصغر وحدة. العسكري عارف حاجتين: رقم كتيبته
+                                    (<code>blockIdx</code>) ورقمه الشخصي جوه الكتيبة (<code>threadIdx</code>).</li>
+                            </ul>
+                            <p><strong>المتغيرات (التعداد):</strong></p>
+                            <ul>
+                                <li><code>blockDim</code>: عدد العساكر في الكتيبة الواحدة (مثلاً 256).</li>
+                                <li><code>gridDim</code>: عدد الكتايب في الجيش كله.</li>
+                            </ul>
+                            <p><strong>ليه بنقسمهم كتايب؟</strong> عشان المرونة. لو معانا جنرال عنده موارد كتير (RTX
+                                4090)، هينزل 100 كتيبة في وقت واحد. لو جنرال غلبان (GTX 1050)، هينزل كتيبتين كتيبتين.
+                                الكود (الخطة) مش بيتغير، بس التنفيذ بيتم حسب المتاح.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q2</span>
+                <span class="question-marks">10 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Thread Index Calculation and Synchronization</strong></p>
+                        <div class="formula-box">tid = blockIdx.x * blockDim.x + threadIdx.x</div>
+                        <ol style="margin-top: 10px;">
+                            <li>Calculate global thread ID for: Block 10, Thread 50, Block Size 256.</li>
+                            <li>Explain <code>__syncthreads()</code> purpose and limitations.</li>
+                        </ol>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q2-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q2-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><strong>a) Calculation:</strong></p>
+                            <ul>
+                                <li><code>tid = 10 * 256 + 50</code></li>
+                                <li><code>tid = 2560 + 50 = 2610</code></li>
+                            </ul>
+                            <p><strong>b) __syncthreads():</strong></p>
+                            <ul>
+                                <li><strong>Purpose:</strong> Barrier Synchronization. All threads <em>within a
+                                        block</em> must reach this point before any can proceed. Used to ensure shared
+                                    memory consistency.</li>
+                                <li><strong>Limitation:</strong> Doesn't work across different blocks (Global Sync is
+                                    not possible inside a kernel). If placed inside an <code>if</code> condition, all
+                                    threads must execute it or deadlock occurs.</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>حسبة مكانك في الاستاد (Global ID): 🏟️</strong></p>
+                            <p>تخيل إنك في استاد. عشان تعرف رقم كرسيك الكلي من أول الاستاد:</p>
+                            <ul>
+                                <li>أنت في "بلوك جماهير" رقم 10 (<code>blockIdx</code>).</li>
+                                <li>كل بلوك بيشيل 256 مشجع (<code>blockDim</code>).</li>
+                                <li>رقم كرسيك جوه البلوك هو 50 (<code>threadIdx</code>).</li>
+                                <li>يبقى قبلك فيه 10 بلوكات مليانين (10 × 256 = 2560 مشجع).</li>
+                                <li>وأنت رقم 50 عليهم. يبقى ترتيبك الكلي: 2610.</li>
+                            </ul>
+                            <p><strong>نقطة التجمع (Syncthreads): 🛑</strong></p>
+                            <p>زي ما يكون قائد الكتيبة بيقول: "محدش يتحرك من هنا غير لما الكتيبة كلها توصل". ده مهم عشان
+                                لو واحد بيطبخ (بيكتب داتا) والتاني هياكل (بيقرا داتا)، لازم نتأكد إن الأكل خلص الأول.
+                                <strong>تحذير:</strong> الأمر ده للكتايب بس، الجيش كله (Grid) ملوش نقطة تجمع مشتركة وهو
+                                شغال.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: CUDA Memory Management -->
+        <h2 class="section-header">Section 2: CUDA Memory Management (25%)</h2>
+        <p class="section-description">Understanding device memory allocation, data transfer, and memory functions.</p>
+
+        <!-- Question 3 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q3</span>
+                <span class="question-marks">10 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Explain CUDA memory management functions.</strong></p>
+                        <ul>
+                            <li><code>cudaMalloc()</code></li>
+                            <li><code>cudaMemcpy()</code> (and transfer directions)</li>
+                            <li><code>cudaFree()</code></li>
+                        </ul>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q3-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q3-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <ul>
+                                <li><strong>cudaMalloc:</strong> Allocates object in the device Global Memory. Returns a
+                                    pointer accessible only by the GPU.</li>
+                                <li><strong>cudaMemcpy:</strong> Data transfer.
+                                    <br><code>HostToDevice</code>: Input data CPU -> GPU.
+                                    <br><code>DeviceToHost</code>: Results GPU -> CPU.
+                                    <br>Bottleneck: PCIe bus speed is slow compared to memory bandwidth.
+                                </li>
+                                <li><strong>cudaFree:</strong> Deallocates device memory. Essential to prevent memory
+                                    leaks on limited GPU VRAM.</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>رحلة المطار (Memory Mgmt): ✈️</strong></p>
+                            <ul>
+                                <li><strong>cudaMalloc (حجز الفندق):</strong> بتحجز مكان في "جزيرة الـ GPU". المكان ده
+                                    هناك بس، محدش من "البلد الأم" (CPU) يقدر يروحه مشي.</li>
+                                <li><strong>cudaMemcpy (الشحن):</strong>
+                                    <br> - <code>HostToDevice</code>: بتشحن الشنط (Input Data) من البلد للجزيرة عشان
+                                    الشغل يبدأ.
+                                    <br> - <code>DeviceToHost</code>: بعد ما الإجازة تخلص، بتشحن الهدايا (Results) راجع
+                                    للبلد.
+                                    <br> *النقل ده بيتم عن طريق "كوبري" اسمه PCIe، وده أبطأ حاجة في العملية كلها، فحاول
+                                    تقلله.*
+                                </li>
+                                <li><strong>cudaFree (Check-out):</strong> لازم تسيب الغرفة لما تمشي، عشان الـ GPU
+                                    مساحته فتافيت (VRAM غالية ومحدودة). لو مخرجتش، الذاكرة هتتملي والبرامج التانية
+                                    هتهنج.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q4</span>
+                <span class="question-marks">9 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Kernel Launch Configuration</strong></p>
+                        <div class="formula-box">myKernel<<<gridSize, blockSize>>>(...)</div>
+                        <ol style="margin-top: 10px;">
+                            <li>How to calculate <code>gridSize</code> for <code>N</code> elements with
+                                <code>blockSize</code> B?</li>
+                            <li>Why do we use the formula <code>(N + B - 1) / B</code>?</li>
+                        </ol>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q4-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q4-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><strong>Calculation:</strong></p>
+                            <p><code>gridSize = (N + B - 1) / B</code> (Equivalent to Ceiling function).</p>
+                            <p><strong>Why:</strong> Integer division rounds down. If we have 100 elements and block
+                                size 32:</p>
+                            <ul>
+                                <li><code>100 / 32 = 3</code> blocks. 3 * 32 = 96 threads. 4 elements are left
+                                    unprocessed!</li>
+                                <li><code>(100 + 31) / 32 = 131 / 32 = 4</code> blocks. 4 * 32 = 128 threads. All 100
+                                    elements covered (plus 28 extra threads).</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>حسبة الميكروباصات: 🚐</strong></p>
+                            <p>معاك 100 شخص (N) وعايز تنقلهم، والميكروباص بيشيل 32 (B).</p>
+                            <ul>
+                                <li>لو قسمت 100 على 32 هيطلعلك 3.125.</li>
+                                <li>في البرمجة (Integers)، الكسور بتطير وبيبقى الرقم 3.</li>
+                                <li>لو جبت 3 ميكروباصات بس، هيشيلوا 96 واحد. وفيه 4 غلابة هيقفوا في الشارع!</li>
+                                <li><strong>الحل:</strong> لازم "تجبر الكسر". المعادلة <code>(N + B - 1) / B</code> دي
+                                    طريقة ذكية عشان نخلي الكمبيوتر يقرب لأقرب رقم صحيح <strong>بالزيادة</strong>. يعني
+                                    هنجيب 4 ميكروباصات، حتى لو الرابع هيركب فيه 4 أنفار بس والباقي فاضي. أهم حاجة محدش
+                                    يفضل في الشارع.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Add Vector Implementation -->
+        <h2 class="section-header">Section 3: Add Vector Implementation (45%)</h2>
+        <p class="section-description">THE MAIN PROGRAM - Complete analysis of CUDA vector addition kernel and host
+            code.</p>
+
+        <!-- Question 5 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q5</span>
+                <span class="question-marks">15 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Analyze the Add Vector kernel.</strong></p>
+                        <pre style="direction: ltr; text-align: left;">
+__global__ void addVec(float *A, float *B, float *C, int N) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < N) {
+        C[i] = A[i] + B[i];
+    }
+}
+                        </pre>
+                        <ol style="margin-top: 10px;">
+                            <li>Explain <code>__global__</code> keyword.</li>
+                            <li>Why is the <code>if (i < N)</code> check necessary?</li>
+                        </ol>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q5-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q5-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <ul>
+                                <li><strong>__global__:</strong> Indicates a kernel function. Callable from Host,
+                                    Executed on Device. Must return void.</li>
+                                <li><strong>if (i < N):</strong> Boundary Check. Since we rounded up the grid size
+                                            (Launch Configuration), we launched more threads than N.
+                                            <br>Example: N=100, Threads=128. Threads 100-127 have indices >= N. If they
+                                            access memory <code>A[i]</code>, it's an Out-of-Bounds Error (Segmentation
+                                            Fault or invalid data). The check ensures they do nothing.
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>تحليل الكود: 🔍</strong></p>
+                            <ul>
+                                <li><strong>__global__:</strong> ده "الأمر العسكري" اللي بيطلع من القيادة (Host) للجنود
+                                    في الميدان (Device).</li>
+                                <li><strong>if (i < N) (نقطة التفتيش):</strong> فاكر الميكروباص الرابع اللي كان فاضي؟
+                                            (سؤال 4).</li>
+                                <li>احنا جبنا 128 كرسي (Threads) عشان 100 ضيف (N).</li>
+                                <li>الضيوف رقم 100 لحد 127 كراسي فاضية (زيادة).</li>
+                                <li>لو الكراسي دي حاولت "تاكل" من الطبق (Access Memory)، هيضربوا في الهوا أو ياخدوا أكل
+                                    مش بتاعهم.</li>
+                                <li>الشرط ده بيقول: "لو رقمك أكبر من عدد المعازيم، اقعد ساكت وماتعملش حاجة". دول "تكملة
+                                    عدد" عشان الكتيبة تكتمل، بس مالهمش شغل.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 6 -->
+        <div class="question-block">
+            <div class="question-meta">
+                <span class="question-number">Q6</span>
+                <span class="question-marks">19 Marks</span>
+            </div>
+            <div class="qa-container">
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <p><strong>Writing complete Host Code.</strong> Explain the 4 main phases of data flow.</p>
+                    </div>
+                    <button class="answer-button" onclick="toggleAnswer('q6-ans')">👁️ Show Answer</button>
+                    <div class="qa-answer-block" id="q6-ans">
+                        <div class="qa-english">
+                            <span class="label-eng">Technical Answer</span>
+                            <p><strong>The 4 Phases:</strong></p>
+                            <ol>
+                                <li><strong>Allocation & Init (Host):</strong> Malloc h_A, h_B. Initialize data. Malloc
+                                    d_A, d_B on GPU.</li>
+                                <li><strong>Transfer H2D:</strong>
+                                    <code>cudaMemcpy(d_A, h_A, size, HostToDevice)</code>. Move input to GPU.</li>
+                                <li><strong>Kernel Launch:</strong> <code>addVec<<<grid, block>>>(d_A...)</code>. GPU
+                                    calculates C = A + B. Results sit in d_C.</li>
+                                <li><strong>Transfer D2H:</strong>
+                                    <code>cudaMemcpy(h_C, d_C, size, DeviceToHost)</code>. Move result back to CPU to
+                                    print/verify.</li>
+                            </ol>
+                            <p><strong>Critical Mistake:</strong> Forgetting Step 4 means the CPU array <code>h_C</code>
+                                contains garbage, even if GPU calculated correctly.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <span class="label-ar">توضيح مبسط</span>
+                            <p><strong>دورة حياة البرنامج (الرحلة): 🔄</strong></p>
+                            <ol>
+                                <li><strong>التجهيز (Alloc):</strong> بنحضر الشنط في البيت (CPU) ونحجز الفندق في الجزيرة
+                                    (GPU).</li>
+                                <li><strong>السفر (H2D):</strong> بناخد الشنط ونروح الجزيرة. (بدون الخطوة دي، الـ GPU
+                                    هيشتغل على هوا!).</li>
+                                <li><strong>الشغل (Kernel):</strong> العمال في الجزيرة بيشتغلوا ويطلعوا إنتاج (C).
+                                    الإنتاج ده لسه هناك في الجزيرة.</li>
+                                <li><strong>العودة (D2H):</strong> بنشحن الإنتاج ونرجعه البيت (CPU) عشان نقدر نشوفه
+                                    ونستخدمه. لو نسيت الخطوة دي، كأنك اشتغلت ومقبضتش، والنتجية اللي معاك في البيت هتبقى
+                                    "زبالة" (Garbage Values).</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p><strong>🚀 HPC Comprehensive Exam 3: CUDA Programming</strong></p>
+        <p>Covering Lectures 7 & 8</p>
+        <p style="margin-top: 15px; color: #64748b;">امتحان شامل - Focus on Practical Implementation</p>
+        <p style="margin-top: 10px; font-size: 0.9em;">Good Luck! 🚀</p>
+    </footer>
+
+    <script>
+        function toggleAnswer(id) {
+            const answer = document.getElementById(id);
+            answer.classList.toggle('show');
+            if (answer.classList.contains('show')) {
+                setTimeout(() => {
+                    answer.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+                }, 100);
+            }
+        }
+
+        // Keyboard shortcut: Ctrl+A to toggle all answers
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.key === 'a') {
+                e.preventDefault();
+                const answers = document.querySelectorAll('.qa-answer-block');
+                const allShown = Array.from(answers).every(a => a.classList.contains('show'));
+                answers.forEach(answer => {
+                    if (allShown) {
+                        answer.classList.remove('show');
+                    } else {
+                        answer.classList.add('show');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
