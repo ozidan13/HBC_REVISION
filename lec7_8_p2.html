@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPC Exam: CUDA Implementation - Add Vector & Memory Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #c084fc;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
+        }
+
+        header h2 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 10px;
+        }
+
+        /* Q&A Interleaved Layout */
+        .qa-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .qa-pair {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 30px;
+        }
+
+        .qa-pair:last-child {
+            border-bottom: none;
+        }
+
+        .qa-question {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .qa-answer-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .qa-english,
+        .qa-arabic {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+            /* Slightly smaller for density */
+        }
+
+        .qa-english {
+            border-left: 3px solid var(--primary);
+        }
+
+        .qa-arabic {
+            direction: rtl;
+            font-family: 'Cairo', sans-serif;
+            border-right: 3px solid var(--success);
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        .label-eng,
+        .label-ar {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.7;
+        }
+
+        .label-eng {
+            color: var(--primary);
+        }
+
+        .label-ar {
+            color: var(--success);
+        }
+
+        /* General Question Container */
+        .question {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 35px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .question::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), transparent);
+            opacity: 0.8;
+            border-radius: 24px 24px 0 0;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .question-number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            font-size: 1.1rem;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            font-weight: 700;
+        }
+
+        .question-marks {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .question h3 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        /* Utilities */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #09090b !important;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+        }
+
+        .reference {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(148, 163, 184, 0.05);
+            border-left: 2px solid var(--text-muted);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .highlight {
+            color: var(--warning);
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .qa-answer-block {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 High Performance Computing Exam</h1>
+            <h2>Lecture 7-8 Part 2: CUDA Implementation</h2>
+            <p style="margin-top: 15px; color: #cbd5e1;">Add Vector Program, Memory Management & GPU Architecture</p>
+            <div class="important-badge">⭐ THE MAIN CUDA PROGRAMMING EXAM ⭐</div>
+        </header>
+
+        <div class="exam-info">
+            <h3>📋 Exam Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Total Questions:</strong>
+                    12 Questions
+                </div>
+                <div class="info-item">
+                    <strong>Total Marks:</strong>
+                    60 Marks
+                </div>
+                <div class="info-item">
+                    <strong>Time Allowed:</strong>
+                    90 Minutes
+                </div>
+                <div class="info-item">
+                    <strong>Focus:</strong>
+                    Add Vector Program (50% weight!)
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 1: ADD VECTOR PROGRAM (THE MAIN ONE!) -->
+        <div class="section section-addvector">
+            <h2 class="section-header">⭐ Section 1: Add Vector Program - THE MAIN PROGRAM (50%)</h2>
+            <p class="section-description">
+                This is THE CORE EXAM TOPIC - Complete CUDA Vector Addition implementation with kernel, memory
+                management, and execution
+            </p>
+
+            <!-- Question 1 - THE BIG ONE -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 1 ⭐ MOST IMPORTANT</span>
+                    <span class="question-marks">20 marks</span>
+                </div>
+
+                <div class="question-content">
+                    <div class="critical-box">
+                        <h4>🎯 COMPLETE ADD VECTOR CUDA PROGRAM</h4>
+                        <p>Write a complete CUDA program to perform vector addition: <strong>C[i] = A[i] + B[i]</strong>
+                        </p>
+                        <p style="margin-top: 10px;"><strong>Requirements:</strong></p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>N = 1024 elements (vector size)</li>
+                            <li>Use 256 threads per block</li>
+                            <li>Each thread computes ONE element</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>Part A - Kernel Function (5 marks):</strong><br>
+                            Write the complete <code>__global__ void vecAdd(float *A, float *B, float *C, int N)</code>
+                            kernel.<br>
+                            Must include: thread index calculation and array element computation.
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer Code</div>
+                                <div class="code-block">
+                                    <div class="code-line"><span class="code-keyword">__global__</span> <span
+                                            class="code-keyword">void</span> <span
+                                            class="code-function">vecAdd</span>(<span class="code-type">float</span> *A,
+                                        <span class="code-type">float</span> *B, <span class="code-type">float</span>
+                                        *C, <span class="code-type">int</span> N) {
+                                    </div>
+                                    <div class="code-line"> <span class="code-type">int</span> i = blockIdx.x *
+                                        blockDim.x + threadIdx.x;</div>
+                                    <div class="code-line"> <span class="code-keyword">if</span> (i < N) {</div>
+                                            <div class="code-line"> C[i] = A[i] + B[i];</div>
+                                            <div class="code-line"> }</div>
+                                            <div class="code-line">}</div>
+                                    </div>
+                                    <p><strong>Why boundary check?</strong> To prevent out-of-bounds access when total
+                                        threads > N.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">الشرح</div>
+                                    <p>أول حاجة بنحسب الـ Global Index (<code>i</code>) عشان كل thread يعرف هو ماسك انهي
+                                        عنصر.</p>
+                                    <p>بمعادلة: <code>رقم البلوك × حجم البلوك + رقم الـ thread</code>.</p>
+                                    <p>ولازم شرط <code>if (i < N)</code> عشان لو عدد الـ threads المتوفرة أكتر من حجم
+                                        المصفوفة، الزيادة دول ميبوظوش الدنيا (Memory Corruption).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part B -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Part B - Host Memory Allocation (2 marks):</strong><br>
+                                Allocate host arrays h_A, h_B, h_C and initialize h_A and h_B with sample data.
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Answer Code</div>
+                                    <div class="code-block">
+                                        <div class="code-line"><span class="code-type">size_t</span> bytes = N * <span
+                                                class="code-keyword">sizeof</span>(<span
+                                                class="code-type">float</span>);</div>
+                                        <div class="code-line"><span class="code-type">float</span> *h_A = (<span
+                                                class="code-type">float</span>*)malloc(bytes);</div>
+                                        <div class="code-line"><span class="code-type">float</span> *h_B = (<span
+                                                class="code-type">float</span>*)malloc(bytes);</div>
+                                        <div class="code-line"><span class="code-type">float</span> *h_C = (<span
+                                                class="code-type">float</span>*)malloc(bytes);</div>
+                                        <div class="code-line"><span class="code-keyword">for</span>(<span
+                                                class="code-type">int</span> i=0; i<N; i++) {</div>
+                                                <div class="code-line"> h_A[i] = 1.0f; h_B[i] = 2.0f;</div>
+                                                <div class="code-line">}</div>
+                                        </div>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">الشرح</div>
+                                        <p>ده شغل C++ عادي (Host Code). بنحجز مكان في الرامات (RAM) باستخدام
+                                            <code>malloc</code> وبنديهم قيم ابتدائية عشان نجمعها.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part C -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    <strong>Part C - Device Memory Allocation (3 marks):</strong><br>
+                                    Use cudaMalloc() to allocate device arrays d_A, d_B, d_C.
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Answer Code</div>
+                                        <div class="code-block">
+                                            <div class="code-line"><span class="code-type">float</span> *d_A, *d_B,
+                                                *d_C;</div>
+                                            <div class="code-line">cudaMalloc(&d_A, bytes);</div>
+                                            <div class="code-line">cudaMalloc(&d_B, bytes);</div>
+                                            <div class="code-line">cudaMalloc(&d_C, bytes);</div>
+                                        </div>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">الشرح</div>
+                                        <p>دلوقتي بنحجز مكان في كارت الشاشة (GPU Memory). الدالة <code>cudaMalloc</code>
+                                            شبه malloc بس بتاخد عنوان المؤشر (Pointer to pointer) عشان ترجعلك العنوان
+                                            الجديد فيه.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part D -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    <strong>Part D - Host to Device Memory Transfer (2 marks):</strong><br>
+                                    Use cudaMemcpy() to copy h_A and h_B to d_A and d_B.
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Answer Code</div>
+                                        <div class="code-block">
+                                            <div class="code-line">cudaMemcpy(d_A, h_A, bytes, cudaMemcpyHostToDevice);
+                                            </div>
+                                            <div class="code-line">cudaMemcpy(d_B, h_B, bytes, cudaMemcpyHostToDevice);
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">الشرح</div>
+                                        <p>بننقل الداتا من الرامات (Host) للكارت (Device). مهم جداً تحدد الاتجاه:
+                                            <code>cudaMemcpyHostToDevice</code>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part E -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    <strong>Part E - Kernel Launch Configuration (3 marks):</strong><br>
+                                    Calculate number of blocks needed and launch kernel with correct syntax.
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Answer Code</div>
+                                        <div class="code-block">
+                                            <div class="code-line"><span class="code-type">int</span> threadsPerBlock =
+                                                256;</div>
+                                            <div class="code-line"><span class="code-type">int</span> blocksPerGrid = (N
+                                                + threadsPerBlock - 1) / threadsPerBlock;</div>
+                                            <div class="code-line">vecAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B,
+                                                    d_C, N);</div>
+                                        </div>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">الشرح</div>
+                                        <p>بنحسب محتاجين كام بلوك عشان نغطي الـ 1024 عنصر. المعادلة
+                                            <code>(N + 255) / 256</code> بتضمن إننا نقرب للأكبر (Ceiling) عشان لو الرقم
+                                            مش بيقبل القسمة.
+                                        </p>
+                                        <p>وبعدين بننادي الـ Kernel بـ <code><<<blocks, threads>>></code>.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part F -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    <strong>Part F - Device to Host Memory Transfer (2 marks):</strong><br>
+                                    Copy result from d_C back to h_C.
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Answer Code</div>
+                                        <div class="code-block">
+                                            <div class="code-line">cudaMemcpy(h_C, d_C, bytes, cudaMemcpyDeviceToHost);
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">الشرح</div>
+                                        <p>بنرجع النتيجة من الكارت للرامات عشان نقدر نشوفها أو نطبعها. الاتجاه هنا:
+                                            <code>cudaMemcpyDeviceToHost</code>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part G -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    <strong>Part G - Memory Cleanup (2 marks):</strong><br>
+                                    Free all device memory using cudaFree().
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Answer Code</div>
+                                        <div class="code-block">
+                                            <div class="code-line">cudaFree(d_A); cudaFree(d_B); cudaFree(d_C);</div>
+                                            <div class="code-line">free(h_A); free(h_B); free(h_C);</div>
+                                        </div>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">الشرح</div>
+                                        <p>نظافة الذاكرة مهمة عشان مبيحصلش Memory Leak.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part H -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    <strong>Part H - Thread Count Calculation (1 mark):</strong><br>
+                                    State total number of threads launched.
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Answer</div>
+                                        <p>Blocks = (1024 + 255)/256 = 4 blocks.</p>
+                                        <p>Total Threads = 4 * 256 = <strong>1024 Threads</strong>.</p>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">الشرح</div>
+                                        <p>بما إننا استخدمنا 4 بلوكات، وكل بلوك فيه 256 خيط، يبقى المجموع 1024 خيط.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="question">
+                    <div class="question-header">
+                        <span class="question-number">Question 2</span>
+                        <span class="question-marks">8 marks</span>
+                    </div>
+
+                    <div class="question-content">
+                        <p><strong>Write ONLY the kernel function for vector addition with boundary checking.</strong>
+                        </p>
+                        <p>Given: Vector size N may NOT be a multiple of block size</p>
+                    </div>
+
+                    <div class="qa-container">
+                        <!-- Part A -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Part A - Kernel Function (4 marks):</strong><br>
+                                Write the complete vecAdd kernel function.
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Answer Code</div>
+                                    <div class="code-block">
+                                        <div class="code-line"><span class="code-keyword">__global__</span> <span
+                                                class="code-keyword">void</span> <span
+                                                class="code-function">vecAdd</span>(<span class="code-type">float</span>
+                                            *A, <span class="code-type">float</span> *B, <span
+                                                class="code-type">float</span> *C, <span class="code-type">int</span> N)
+                                            {</div>
+                                        <div class="code-line"> <span class="code-type">int</span> i = blockIdx.x *
+                                            blockDim.x + threadIdx.x;</div>
+                                        <div class="code-line"> <span class="code-keyword">if</span> (i < N) {</div>
+                                                <div class="code-line"> C[i] = A[i] + B[i];</div>
+                                                <div class="code-line"> }</div>
+                                                <div class="code-line">}</div>
+                                        </div>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">الشرح</div>
+                                        <p>نفس فكرة السؤال اللي فات، بس هنا بنركز على الـ Kernel بس.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part B -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    <strong>Part B - Boundary Check Logic (2 marks):</strong><br>
+                                    Explain why boundary checking (if i < N) is necessary. </div>
+                                        <div class="qa-answer-block">
+                                            <div class="qa-english">
+                                                <div class="label-eng">Answer</div>
+                                                <p><strong>Block size alignment:</strong> We often launch more threads
+                                                    than N because block size is fixed (e.g., 256). The extra threads
+                                                    must be prevented from accessing invalid memory.</p>
+                                            </div>
+                                            <div class="qa-arabic">
+                                                <div class="label-ar">الشرح</div>
+                                                <p>عشان لو N مش بيقبل القسمة على حجم البلوك، هيتبقى threads زيادة في آخر
+                                                    بلوك. لو سيبناهم يشتغلوا هيبوظوا الذاكرة.</p>
+                                            </div>
+                                        </div>
+                                </div>
+
+                                <!-- Part C -->
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <strong>Part C - Consequences (2 marks):</strong><br>
+                                        What happens without boundary checking if total_threads > N?
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="label-eng">Answer</div>
+                                            <div class="warning-box">
+                                                <strong>⚠️ Consequences:</strong>
+                                                <ul>
+                                                    <li>Memory corruption (writing to invalid addresses)</li>
+                                                    <li>Segmentation fault (crash)</li>
+                                                    <li>Incorrect results</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <div class="label-ar">تحذير</div>
+                                            <p>ممكن يحصل Crash للبرنامج أو النتيج تطلع غلط بسبب الكتابة في أماكن عشوائية
+                                                في الذاكرة.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Question 3 -->
+                        <div class="question">
+                            <div class="question-header">
+                                <span class="question-number">Question 3</span>
+                                <span class="question-marks">6 marks</span>
+                            </div>
+
+                            <div class="question-content">
+                                <p><strong>Kernel Launch Configuration Analysis:</strong></p>
+                                <p>Given: Vector addition kernel for N=2048 elements</p>
+                            </div>
+
+                            <div class="qa-container">
+                                <!-- Part A -->
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <strong>Part A - Number of Blocks (2 marks):</strong><br>
+                                        If using 256 threads per block, how many blocks are needed?
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="label-eng">Answer</div>
+                                            <p>blocks = 2048 / 256 = <strong>8 blocks</strong>.</p>
+                                            <p>(Since 2048 is divisible by 256, no extra block needed).</p>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <div class="label-ar">الحل</div>
+                                            <p>القانون: العدد الكلي / سعة البلوك.</p>
+                                            <p>2048 / 256 = 8 بلوكات بالظبط.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Part B -->
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <strong>Part B - Launch Statement (2 marks):</strong><br>
+                                        Write the kernel launch statement.
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="label-eng">Answer Code</div>
+                                            <div class="code-block">
+                                                <div class="code-line">vecAdd<<<8, 256>>>(d_A, d_B, d_C, 2048);</div>
+                                            </div>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <div class="label-ar">الحل</div>
+                                            <p>بنكتب: <code>vecAdd<<<8, 256>>>(...)</code>.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Part C -->
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <strong>Part C - Index Calculation (2 marks):</strong><br>
+                                        If a thread has blockIdx.x=5 and threadIdx.x=100, which element does it compute?
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="label-eng">Answer</div>
+                                            <div class="code-block">
+                                                <div class="code-line">i = blockIdx.x * blockDim.x + threadIdx.x</div>
+                                                <div class="code-line">i = 5 * 256 + 100</div>
+                                                <div class="code-line">i = 1280 + 100 = <strong>1380</strong></div>
+                                            </div>
+                                            <p>It computes <strong>C[1380]</strong>.</p>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <div class="label-ar">الشرح</div>
+                                            <p>قبلك 5 عماير (بلوكات) كاملين: 5 × 256 = 1280.</p>
+                                            <p>وانت في الشقة 100. يبقى المجموع: 1280 + 100 = 1380.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 2: MEMORY MANAGEMENT -->
+                        <div class="section section-memory">
+                            <h2 class="section-header">Section 2: CUDA Memory Management (25%)</h2>
+                            <p class="section-description">
+                                Essential API functions for dynamic memory allocation and data transfer
+                            </p>
+                        </div>
+
+                        <!-- Question 4 -->
+                        <div class="question">
+                            <div class="question-header">
+                                <span class="question-number">Question 4</span>
+                                <span class="question-marks">10 marks</span>
+                            </div>
+
+                            <div class="question-content">
+                                <p><strong>Explain the three essential CUDA memory management functions.</strong></p>
+                                <p>For each function, provide the syntax, purpose, and a brief code example.</p>
+                            </div>
+
+                            <div class="qa-container">
+                                <!-- Part A -->
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <strong>1. cudaMalloc() (4 marks):</strong><br>
+                                        Explain cudaMalloc and provided an example.
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="label-eng">Answer Code</div>
+                                            <div class="code-block">
+                                                <div class="code-line"><span class="code-comment">// Syntax</span></div>
+                                                <div class="code-line">cudaError_t <span
+                                                        class="code-function">cudaMalloc</span>(<span
+                                                        class="code-type">void**</span> devPtr, <span
+                                                        class="code-type">size_t</span> size);</div>
+                                                <div class="code-line"></div>
+                                                <div class="code-line"><span class="code-comment">// Example</span>
+                                                </div>
+                                                <div class="code-line"><span class="code-type">float</span> *d_array;
+                                                </div>
+                                                <div class="code-line"><span class="code-type">int</span> bytes = 256 *
+                                                    <span class="code-keyword">sizeof</span>(<span
+                                                        class="code-type">float</span>);
+                                                </div>
+                                                <div class="code-line"><span
+                                                        class="code-function">cudaMalloc</span>((<span
+                                                        class="code-type">void**</span>)&d_array, bytes);</div>
+                                            </div>
+                                            <p><strong>Purpose:</strong> Allocates memory on the GPU (Global Memory).
+                                            </p>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <div class="label-ar">الشرح</div>
+                                            <p>دي زي <code>malloc</code> بتاعة الـ C بس بتحجز على كارت الشاشة (VRAM).
+                                            </p>
+                                            <p>التركاية هنا إنها بتاخد Pointer to Pointer (<code>void**</code>) عشان هي
+                                                بترجع العنوان اللي حجزته في البوينتر ده.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Part B -->
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <strong>2. cudaMemcpy() (4 marks):</strong><br>
+                                        Explain cudaMemcpy and provide an example.
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="label-eng">Answer Code</div>
+                                            <div class="code-block">
+                                                <div class="code-line"><span class="code-comment">// Syntax</span></div>
+                                                <div class="code-line">cudaError_t <span
+                                                        class="code-function">cudaMemcpy</span>(<span
+                                                        class="code-type">void*</span> dst, <span
+                                                        class="code-type">const void*</span> src, <span
+                                                        class="code-type">size_t</span> count, cudaMemcpyKind kind);
+                                                </div>
+                                                <div class="code-line"></div>
+                                                <div class="code-line"><span class="code-comment">// Example (Host to
+                                                        Device)</span></div>
+                                                <div class="code-line"><span
+                                                        class="code-function">cudaMemcpy</span>(d_A, h_A, bytes, <span
+                                                        class="code-keyword">cudaMemcpyHostToDevice</span>);</div>
+                                            </div>
+                                            <p><strong>Purpose:</strong> Copies data between Host (CPU) and Device
+                                                (GPU). Requires direction.</p>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <div class="label-ar">الشرح</div>
+                                            <p>دي وسيلة المواصلات. عشان تنقل داتا من الـ CPU للـ GPU أو العكس.</p>
+                                            <p>لازم تحدد 4 حاجات: رايح فين (Dest)، جاي منين (Src)، قد ايه (Size)، واتجاه
+                                                السفر (Direction).</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Part C -->
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <strong>3. cudaFree() (1 mark):</strong><br>
+                                        Explain cudaFree.
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="label-eng">Answer Code</div>
+                                            <div class="code-block">
+                                                <div class="code-line"><span
+                                                        class="code-function">cudaFree</span>(d_array);</div>
+                                            </div>
+                                            <p><strong>Purpose:</strong> Frees memory on the GPU to prevent leaks.</p>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <div class="label-ar">الشرح</div>
+                                            <p>مهمة جداً عشان متعملش Memory Leak. بتنضف الذاكرة اللي حجزتها على الكارت
+                                                لما تخلص.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Part D -->
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <strong>Why special functions? (1 mark):</strong><br>
+                                        Why can't we just use standard malloc and memcpy?
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="label-eng">Answer</div>
+                                            <p>CPU and GPU have separate physical memory spaces (RAM vs VRAM). The CPU
+                                                cannot directly access GPU memory pointers.</p>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <div class="label-ar">ليه؟</div>
+                                            <p>عشان الرامات (RAM) وكارت الشاشة (VRAM) دول جهازين مختلفين مفصولين. الـ
+                                                CPU مش بيقدر يشوف أو يكتب مباشرة في VRAM، فلازم دوال خاصة.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+
+
+
+                        <!-- Question 5 -->
+                        <!-- Question 5 -->
+                        <div class="question">
+                            <div class="question-header">
+                                <span class="question-number">Question 5</span>
+                                <span class="question-marks">5 marks</span>
+                            </div>
+
+                            <div class="qa-container">
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <p><strong>Given the following CUDA code, identify and explain THREE
+                                                errors:</strong></p>
+                                        <div class="code-block">
+                                            <div class="code-line"><span class="code-type">int</span> N = 512;</div>
+                                            <div class="code-line"><span class="code-type">float</span> *h_data = (<span
+                                                    class="code-type">float</span>*)<span
+                                                    class="code-function">malloc</span>(N * <span
+                                                    class="code-keyword">sizeof</span>(<span
+                                                    class="code-type">float</span>));</div>
+                                            <div class="code-line"><span class="code-type">float</span> *d_data;</div>
+                                            <div class="code-line"></div>
+                                            <div class="code-line"><span class="code-comment">// Error 1?</span></div>
+                                            <div class="code-line"></div>
+                                            <div class="code-line"><span class="code-function">cudaMemcpy</span>(d_data,
+                                                h_data, N, <span class="code-keyword">cudaMemcpyHostToDevice</span>);
+                                            </div>
+                                            <div class="code-line"></div>
+                                            <div class="code-line"><span
+                                                    class="code-function">myKernel</span>&lt;&lt;&lt;2,
+                                                256&gt;&gt;&gt;(d_data);</div>
+                                            <div class="code-line"></div>
+                                            <div class="code-line"><span class="code-function">cudaMemcpy</span>(h_data,
+                                                d_data, N * <span class="code-keyword">sizeof</span>(<span
+                                                    class="code-type">float</span>), <span
+                                                    class="code-keyword">cudaMemcpyHostToDevice</span>);</div>
+                                            <div class="code-line"></div>
+                                            <div class="code-line"><span class="code-function">free</span>(h_data);
+                                            </div>
+                                            <div class="code-line"><span class="code-comment">// Error 3?</span></div>
+                                        </div>
+                                        <p style="margin-top: 15px;"><strong>Identify Error 1 (Allocation):</strong></p>
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="warning-box">
+                                                <strong>❌ ERROR 1: Missing cudaMalloc() (2 marks)</strong>
+                                                <p><strong>Problem:</strong> Device pointer <code>d_data</code> is
+                                                    declared but never allocated memory.</p>
+                                                <p><strong>Consequence:</strong> <code>cudaMemcpy()</code> will fail
+                                                    because <code>d_data</code> points to nowhere (uninitialized
+                                                    pointer).</p>
+                                                <p><strong>Fix:</strong> Add <code>cudaMalloc</code> before the first
+                                                    memcpy.</p>
+                                                <div class="code-block">
+                                                    <div class="code-line"><span
+                                                            class="code-function">cudaMalloc</span>((<span
+                                                            class="code-type">void**</span>)&amp;d_data, N * <span
+                                                            class="code-keyword">sizeof</span>(<span
+                                                            class="code-type">float</span>));</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <strong>1. الغلطة الأولى (نسي يحجز):</strong>
+                                            <p>هو عرف <code>d_data</code> بس محجزلهوش مكان بـ <code>cudaMalloc</code>.
+                                                فالبوينتر ده بيشاور على "لا شيء".
+                                                لما يجي ينقل عليه داتا البرنامج هيضرب.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qa-container">
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <p><strong>Identify Error 2 (Data Transfer Size):</strong></p>
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="warning-box">
+                                                <strong>❌ ERROR 2: Wrong size in first cudaMemcpy() (2 marks)</strong>
+                                                <p><strong>Problem:</strong> First <code>cudaMemcpy</code> uses
+                                                    <code>N</code> (512) instead of <code>N * sizeof(float)</code>
+                                                    (2048).
+                                                </p>
+                                                <p><strong>Consequence:</strong> Only copies 512 bytes instead of 2048
+                                                    bytes, so only 128 floats are transferred.</p>
+                                                <p><strong>Fix:</strong> Use <code>N * sizeof(float)</code>.</p>
+                                            </div>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <strong>2. الغلطة الثانية (الحجم غلط):</strong>
+                                            <p>في أول نقلة، كتب الحجم <code>N</code> بس (اللي هو 512). بس الكمبيوتر
+                                                بيفهم بالبايت!
+                                                <br>لازم يضرب في حجم العنصر الواحد: <code>N * sizeof(float)</code>.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qa-container">
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <p><strong>Identify Error 3 (Transfer Direction):</strong></p>
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="warning-box">
+                                                <strong>❌ ERROR 3: Wrong direction in second cudaMemcpy() (1
+                                                    mark)</strong>
+                                                <p><strong>Problem:</strong> Second <code>cudaMemcpy</code> uses
+                                                    <code>cudaMemcpyHostToDevice</code> when it should be
+                                                    <code>DeviceToHost</code>.
+                                                </p>
+                                                <p><strong>Consequence:</strong> Overwrites the results on the GPU with
+                                                    old CPU data instead of retrieving results.</p>
+                                                <p><strong>Fix:</strong> Use <code>cudaMemcpyDeviceToHost</code>.</p>
+                                            </div>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <strong>3. الغلطة الثالثة (الاتجاه غلط):</strong>
+                                            <p>وهو بيرجع النتيجة (آخر نقلة)، المفروض ينقل من Device لـ Host.
+                                                <br>هو كتب العكس <code>cudaMemcpyHostToDevice</code>، يعني بيمسح النتيجة
+                                                اللي حسبها (على d_data) بالداتا القديمة اللي عند الـ Host!
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qa-container">
+                                <div class="qa-pair">
+                                    <div class="qa-question">
+                                        <p><strong>Bonus: Are there other issues?</strong></p>
+                                    </div>
+                                    <div class="qa-answer-block">
+                                        <div class="qa-english">
+                                            <div class="warning-box">
+                                                <strong>BONUS ERROR: Missing cudaFree(d_data)</strong>
+                                                <p>Device memory is never freed, causing memory leak on GPU!</p>
+                                                <p><strong>Fix:</strong> Add <code>cudaFree(d_data);</code> before
+                                                    program ends.</p>
+                                            </div>
+                                        </div>
+                                        <div class="qa-arabic">
+                                            <strong>بونص:</strong>
+                                            <p>نسي يعمل <code>cudaFree</code> في الآخر. دي مش هتعمل Crash بس عيب فني
+                                                (Memory Leak).</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 3: MATRIX MULTIPLICATION -->
+                        <div class="section section-matrix">
+                            <h2 class="section-header">Section 3: Matrix
+                                Multiplication (15%)</h2>
+                            <p class="section-description">
+                                Matrix multiplication kernel implementation and
+                                optimization concepts
+                            </p>
+
+                            <!-- Question 6 -->
+                            <div class="question">
+                                <div class="question-header">
+                                    <span class="question-number">Question 6</span>
+                                    <span class="question-marks">9 marks</span>
+                                </div>
+
+                                <div class="qa-container">
+                                    <div class="qa-pair">
+                                        <div class="qa-question">
+                                            <p><strong>Explain the matrix multiplication kernel
+                                                    (Naive/No-Tiling).</strong></p>
+                                            <p>Given P = M × N (all WIDTH × WIDTH).</p>
+                                            <p style="margin-top: 15px;"><strong>Part 1: Write the kernel that computes
+                                                    one element of P per thread (5 marks).</strong></p>
+                                        </div>
+                                        <div class="qa-answer-block">
+                                            <div class="qa-english">
+                                                <h3 style="color: #22c55e;">✅ Naive Matrix Multiplication Kernel:</h3>
+                                                <div class="code-block">
+                                                    <div class="code-line"><span class="code-keyword">__global__</span>
+                                                        <span class="code-keyword">void</span> <span
+                                                            class="code-function">MatrixMulKernel</span>(Matrix M,
+                                                        Matrix N, Matrix P) {
+                                                    </div>
+                                                    <div class="code-line"> <span class="code-comment">// 2D Thread
+                                                            ID</span></div>
+                                                    <div class="code-line"> <span class="code-type">int</span> tx =
+                                                        threadIdx.x; <span class="code-comment">// Column</span></div>
+                                                    <div class="code-line"> <span class="code-type">int</span> ty =
+                                                        threadIdx.y; <span class="code-comment">// Row</span></div>
+                                                    <div class="code-line"></div>
+                                                    <div class="code-line"> <span class="code-comment">// Pvalue stores
+                                                            the element of P computed by this thread</span></div>
+                                                    <div class="code-line"> <span class="code-type">float</span> Pvalue
+                                                        = 0;</div>
+                                                    <div class="code-line"></div>
+                                                    <div class="code-line"> <span class="code-comment">// Loop over M
+                                                            row and N column</span></div>
+                                                    <div class="code-line"> <span class="code-keyword">for</span> (<span
+                                                            class="code-type">int</span> k = 0; k &lt; M.width; ++k) {
+                                                    </div>
+                                                    <div class="code-line"> <span class="code-type">float</span>
+                                                        Melement = M.elements[ty * M.pitch + k];</div>
+                                                    <div class="code-line"> <span class="code-type">float</span>
+                                                        Nelement = N.elements[k * N.pitch + tx];</div>
+                                                    <div class="code-line"> Pvalue += Melement * Nelement;</div>
+                                                    <div class="code-line"> }</div>
+                                                    <div class="code-line"></div>
+                                                    <div class="code-line"> <span class="code-comment">// Write result
+                                                            to global memory</span></div>
+                                                    <div class="code-line"> P.elements[ty * P.pitch + tx] = Pvalue;
+                                                    </div>
+                                                    <div class="code-line">}</div>
+                                                </div>
+                                            </div>
+                                            <div class="qa-arabic">
+                                                <strong>1. الكود (Naive Kernel):</strong>
+                                                <p>ده الكود المباشر من غير تحسينات.
+                                                    <br>الفكرة الأساسية: كل <code>Thread</code> مسئول عن حساب قيمة عنصر
+                                                    واحد بس في المصفوفة <code>P</code>.
+                                                    <br>بيعمل Loop يضرب صف من <code>M</code> في عمود من <code>N</code>
+                                                    ويجمعهم.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="qa-container">
+                                    <div class="qa-pair">
+                                        <div class="qa-question">
+                                            <p><strong>Part 2: Explain how Thread IDs map to Matrix Elements (2
+                                                    marks).</strong></p>
+                                        </div>
+                                        <div class="qa-answer-block">
+                                            <div class="qa-english">
+                                                <ul>
+                                                    <li><strong>2D Mapping:</strong> Use <code>tx = threadIdx.x</code>
+                                                        for Column and <code>ty = threadIdx.y</code> for Row.</li>
+                                                    <li><strong>One Thread = One Element:</strong> Thread (tx, ty)
+                                                        computes <code>P[ty][tx]</code> (or <code>P[row][col]</code>).
+                                                    </li>
+                                                    <li><strong>Indexing:</strong> Accesses are linearized as
+                                                        <code>ty * width + tx</code>.
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="qa-arabic">
+                                                <strong>2. ربط الـ Threads بالمصفوفة:</strong>
+                                                <p>بنستخدم 2D Grid من الـ Threads.
+                                                    <br>الـ <code>x</code> (threadIdx.x) هو رقم العمود.
+                                                    <br>الـ <code>y</code> (threadIdx.y) هو رقم الصف.
+                                                    <br>يعني لو عايز تحسب العنصر اللي في الصف التاني والعمود التالت، الـ
+                                                    Thread (3, 2) هو اللي هيحسبه.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="qa-container">
+                                    <div class="qa-pair">
+                                        <div class="qa-question">
+                                            <p><strong>Part 3: Why is this version memory-intensive and inefficient? (2
+                                                    marks)</strong></p>
+                                        </div>
+                                        <div class="qa-answer-block">
+                                            <div class="qa-english">
+                                                <div class="warning-box">
+                                                    <strong>⚠️ Memory Inefficiency:</strong>
+                                                    <ul>
+                                                        <li><strong>Repeated Global Memory Reads:</strong> Each element
+                                                            of M and N is read <code>width</code> times from Global
+                                                            Memory.</li>
+                                                        <li><strong>Slow Access:</strong> Global Memory is slow (~300
+                                                            cycles) compared to Shared Memory (~2 cycles).</li>
+                                                        <li><strong>Low Compute-to-Memory Ratio:</strong> Ratio is close
+                                                            to 1:1, making the kernel <strong>Bandwidth Bound</strong>.
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="qa-arabic">
+                                                <strong>3. ليه الكود ده بطيء (Inefficient)؟</strong>
+                                                <p>المشكلة الأساسية هي <strong>الذاكرة (Memory)</strong>:
+                                                    <br>- الكود بيقرا نفس المعلومات من الـ Global Memory (اللي هي بطيئة
+                                                    جداً) كذا مرة.
+                                                    <br>- كل عنصر بيتقري <code>N</code> مرة (عرض المصفوفة).
+                                                    <br>- <strong>الحل:</strong> نستخدم Tiling و Shared Memory عشان نقرأ
+                                                    الداتا مرة واحدة ونعملها Reuse بسرعة.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SECTION 4: GPU ARCHITECTURE -->
+                            <div class="section section-gpu">
+                                <h2 class="section-header">Section
+                                    4: GPU Architecture Comparison
+                                    (10%)</h2>
+                                <p class="section-description">
+                                    NVIDIA G80 GPU Architecture
+                                    specifications and
+                                    characteristics
+                                </p>
+
+                                <!-- Question 7 -->
+                                <div class="question">
+                                    <div class="question-header">
+                                        <span class="question-number">Question 7</span>
+                                        <span class="question-marks">6 marks</span>
+                                    </div>
+
+                                    <div class="qa-container">
+                                        <div class="qa-pair">
+                                            <div class="qa-question">
+                                                <p><strong>Based on NVIDIA G80 Architecture:</strong></p>
+                                                <p style="margin-top: 10px;"><strong>a) How many Multiprocessors (MPs)
+                                                        and Streaming Processors (SPs) per MP? (2 marks)</strong></p>
+                                            </div>
+                                            <div class="qa-answer-block">
+                                                <div class="qa-english">
+                                                    <ul>
+                                                        <li><strong>Multiprocessors (MPs):</strong> 16 MPs.</li>
+                                                        <li><strong>Streaming Processors (SPs) per MP:</strong> 8 SPs.
+                                                        </li>
+                                                        <li>Each MP is a block containing 8 CUDA cores.</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="qa-arabic">
+                                                    <strong>1. الهيكل (MPs & SPs):</strong>
+                                                    <p>الكارت مقسم لـ 16 بلوك كبير اسمهم <strong>Multiprocessors
+                                                            (MPs)</strong>.
+                                                        <br>جوه كل بلوك فيه 8 صنايعية صغار اسمهم <strong>Streaming
+                                                            Processors (SPs)</strong> أو Cores.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="qa-container">
+                                        <div class="qa-pair">
+                                            <div class="qa-question">
+                                                <p><strong>b) Calculate the Total CUDA Cores (1 mark).</strong></p>
+                                            </div>
+                                            <div class="qa-answer-block">
+                                                <div class="qa-english">
+                                                    <div class="code-block">
+                                                        <div class="code-line">Total Cores = MPs × SPs per MP</div>
+                                                        <div class="code-line">Total Cores = 16 × 8</div>
+                                                        <div class="code-line">Total Cores = <span class="highlight">128
+                                                                CUDA Cores</span></div>
+                                                    </div>
+                                                </div>
+                                                <div class="qa-arabic">
+                                                    <strong>2. العدد الكلي (Total Cores):</strong>
+                                                    <p>عدد البلوكات (16) في عدد الصنايعية في كل بلوك (8) = 128 كور.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="qa-container">
+                                        <div class="qa-pair">
+                                            <div class="qa-question">
+                                                <p><strong>c) How much Shared Memory is available per MP? (1
+                                                        mark)</strong></p>
+                                            </div>
+                                            <div class="qa-answer-block">
+                                                <div class="qa-english">
+                                                    <p><strong>Answer:</strong> <span class="highlight">16KB (16,384
+                                                            bytes)</span> per Multiprocessor.</p>
+                                                    <p>Organized in 16 banks to avoid conflicts.</p>
+                                                </div>
+                                                <div class="qa-arabic">
+                                                    <strong>3. الذاكرة المشتركة (Shared Memory):</strong>
+                                                    <p>كل بلوك (MP) عنده <strong>16KB</strong> ذاكرة سريعة خاصة بيه. دي
+                                                        اللي بنسميها Shared Memory.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="qa-container">
+                                        <div class="qa-pair">
+                                            <div class="qa-question">
+                                                <p><strong>d) Compare Memory Access Latencies (Shared vs Global) (2
+                                                        marks).</strong></p>
+                                            </div>
+                                            <div class="qa-answer-block">
+                                                <div class="qa-english">
+                                                    <table>
+                                                        <tr>
+                                                            <th>Memory Type</th>
+                                                            <th>Latency</th>
+                                                            <th>Comparison</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Shared</td>
+                                                            <td><span class="highlight">~2 cycles</span></td>
+                                                            <td>Very Fast</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Global (Device)</td>
+                                                            <td><span class="highlight">~300 cycles</span></td>
+                                                            <td>150x Slower</td>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                                <div class="qa-arabic">
+                                                    <strong>4. فرق السرعة (Latency):</strong>
+                                                    <p>- <strong>Shared Memory:</strong> سريعة جداً (حوالي 2 cycles).
+                                                        <br>- <strong>Global Memory:</strong> بطيئة جداً (حوالي 300
+                                                        cycles).
+                                                        <br>عشان كده لازم ننقل الداتا للـ Shared Memory عشان نسرع الكود.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <footer>
+                                <p>📚 HPC Exam -
+                                    CUDA
+                                    Implementation &
+                                    Add Vector
+                                    Program |
+                                    Lecture 7-8 Part
+                                    2
+                                </p>
+                                <p>⭐ THE MAIN CUDA
+                                    PROGRAMMING EXAM
+                                    - Focus on
+                                    practical
+                                    implementation ⭐
+                                </p>
+                                <p style="margin-top: 10px; font-size: 0.85em;">
+                                    Generated based
+                                    on lecture
+                                    slides - Master
+                                    the Add Vector
+                                    program!</p>
+                            </footer>
+                        </div>
+
+
+</body>
+
+</html>

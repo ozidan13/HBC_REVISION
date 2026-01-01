@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>High Performance Computing Exam – Lectures 5 & 6</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #c084fc;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
+        }
+
+        header h2 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 10px;
+        }
+
+        .exam-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .exam-info h3 {
+            display: none;
+        }
+
+        /* We will hide the old header inside */
+        .info-grid {
+            display: contents;
+        }
+
+        .info-item {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .info-item:hover {
+            transform: translateY(-5px) scale(1.02);
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 10px 30px -10px rgba(56, 189, 248, 0.15);
+        }
+
+        .info-item strong {
+            display: block;
+            color: var(--primary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        /* Section Styling */
+        .section {
+            position: relative;
+            padding: 30px 0;
+            margin-bottom: 60px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+
+        .section-header {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid;
+            border-image: linear-gradient(to right, currentColor, transparent) 1;
+            text-align: left;
+            /* Override previous center alignment if any */
+        }
+
+        .section-header:nth-of-type(1) {
+            color: var(--primary);
+        }
+
+        .section-header:nth-of-type(2) {
+            color: var(--secondary);
+        }
+
+        .section-header:nth-of-type(3) {
+            color: var(--success);
+        }
+
+        .section-header:nth-of-type(4) {
+            color: var(--warning);
+        }
+
+
+        /* Question Styling */
+        .question {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 35px;
+            margin-bottom: 40px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .question::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), transparent);
+            opacity: 0.8;
+        }
+
+        .question:hover {
+            transform: translateY(-4px);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .question-number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            font-size: 1.1rem;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            font-weight: 700;
+        }
+
+        .question-marks {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .question-content {
+            font-size: 1.15rem;
+            color: #e2e8f0;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        /* Code Block */
+        .code-block,
+        pre,
+        code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .question pre {
+            background: #09090b;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #27272a;
+            font-size: 0.95rem;
+            margin: 25px 0;
+            overflow-x: auto;
+            position: relative;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.3);
+            color: #e2e8f0;
+        }
+
+        code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #38bdf8;
+            font-size: 0.9em;
+        }
+
+        /* New QA Structure for Interleaved Answers */
+        .qa-container {
+            margin-top: 20px;
+        }
+
+        .qa-pair {
+            margin-bottom: 25px;
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .qa-question {
+            padding: 15px 20px;
+            font-size: 1.05rem;
+            color: #fff;
+            background: rgba(56, 189, 248, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+        }
+
+        .qa-answer-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* English | Arabic */
+            gap: 0;
+        }
+
+        .qa-english {
+            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(2, 6, 23, 0.2);
+        }
+
+        .qa-arabic {
+            padding: 20px;
+            direction: rtl;
+            text-align: right;
+            font-family: 'Cairo', sans-serif;
+            background: rgba(30, 41, 59, 0.2);
+        }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .qa-answer-block {
+                grid-template-columns: 1fr;
+            }
+
+            .qa-english {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+        }
+
+        .label-eng {
+            color: var(--primary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .label-ar {
+            color: var(--success);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Arabic Styles Refined */
+        .arabic-text,
+        .question-explanation,
+        .egyptian-explanation {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        .egyptian-explanation {
+            background: linear-gradient(to right, rgba(34, 197, 94, 0.05), rgba(34, 197, 94, 0.1));
+            border-right: 4px solid var(--success);
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 0;
+            color: #f1f5f9;
+            font-size: 1.15rem;
+            height: 100%;
+        }
+
+        .egyptian-explanation h4 {
+            color: var(--success);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .highlight {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 0;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 60px;
+        }
+
+        .small {
+            font-size: 0.85em;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- University / Course Header -->
+    <h1>High Performance Computing</h1>
+    <div class="meta">
+        <div>Course: High Performance Computing (Parallel Execution & Memory Systems)</div>
+        <div>Topic: Lectures 5 &amp; 6 – Modern Multi-Core Processors, SIMD &amp; Memory</div>
+        <div>Total Marks: 50 &nbsp;|&nbsp; Suggested Time: 120 minutes</div>
+    </div>
+
+    <div class="section-header">SECTION 1: CUDA / PARALLEL PROGRAMMING (20 marks)</div>
+
+    <!-- Q1 -->
+    <!-- Q1 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 1</span>
+            <span class="question-marks">5 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>Understanding Parallel Execution Models</h3>
+            <p>Consider the following C function that computes <code>sin(x)</code> using a Taylor expansion for an array
+                of
+                <code>N</code> elements:
+            </p>
+            <pre><code>void sinx(int N, int terms, float* x, float* result)
+{
+    for (int i = 0; i &lt; N; i++)
+    {
+        float value = x[i];
+        float numer = x[i] * x[i] * x[i];
+        int   denom = 6; // 3!
+        int   sign  = -1;
+
+        for (int j = 1; j &lt;= terms; j++)
+        {
+            value += sign * numer / denom;
+            numer *= x[i] * x[i];
+            denom *= (2*j+2) * (2*j+3);
+            sign  *= -1;
+        }
+        result[i] = value;
+    }
+}</code></pre>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) Identify which loop iterations are data-independent and can be parallelized. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>The outer loop over <code>i</code> is data-independent and can be parallelized, because
+                                each iteration reads a distinct <code>x[i]</code> and writes a distinct
+                                <code>result[i]</code> without cross-iteration dependencies; the inner loop over
+                                <code>j</code> is sequential because each iteration depends on the updated
+                                <code>value</code>, <code>numer</code>, and <code>denom</code> from the previous
+                                iteration.
+                            </p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>اللوب الكبيرة اللي بتلف على <code>i</code> دي "سالكة" (independent). يعني كل عنصر
+                                <code>x[i]</code> عايش في دنيا لوحده وبيتحسب لوحده من غير ما يسأل على اللي جنبه. عشان
+                                كده نقدر نشغلهم كلهم مع بعض في نفس الوقت.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Explain why this program may run about 25% slower on a dual-core processor with simpler
+                        cores than on a single, more complex core when compiled as-is (without explicit parallelism). (2
+                        marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>In the “CPU: Multi-Core Era” model, the chip replaces a single complex core with two
+                                simpler cores, each about 25% slower; since the program expresses no parallelism, the
+                                compiled code runs as a single thread on only one simpler core, so performance becomes
+                                roughly <code>1 × 0.75</code> of the original, i.e., about 25% slower despite having two
+                                cores available.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>ليه الموضوع أبطأ؟ عشان احنا كنا شغالين بنواة واحدة "عضلاتها مفتولة" (Complex Core). لما
+                                بدلناها بـ "اتنين عمال على قدهم" (Simpler Cores)، والكود بتاعنا مش فاهم يعني إيه توازي،
+                                فهو فضل شغال على عامل واحد بس منهم. فطبيعي الإنجاز يقل لأن العامل الجديد أضعف بـ 25%.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (c) Suggest a high-level language construct or annotation that exposes the available parallelism
+                        in this function to a compiler. (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>A data-parallel construct such as a <code>forall</code> loop over <code>i</code> (or
+                                equivalently a parallel loop pragma, e.g. OpenMP <code>#pragma omp parallel for</code>)
+                                can be used to declare that the iterations are independent, enabling the compiler to
+                                automatically generate parallel threaded or vectorized code.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الحل إننا "نفتح عين" الكود. نستخدم <code>forall</code> أو <code>OpenMP</code> عشان نقول
+                                للـ Compiler: "يا بشمهندس، اللفات دي ملهاش دعوة ببعض، وزع الشغل على كل الرجالة اللي
+                                عندك".</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “Example program: sinx”, “CPU: Multi-Core Era”, and “Data-parallel
+                expression (forall)”.
+            </div>
+        </div>
+    </div>
+
+    <!-- Q2 -->
+    <!-- Q2 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 2</span>
+            <span class="question-marks">5 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>SIMD Programming with AVX Intrinsics</h3>
+            <p>Now consider a vectorized version of <code>sinx</code> that processes 8 elements at a time using AVX
+                intrinsics:</p>
+            <pre><code>#include &lt;immintrin.h&gt;
+
+void sinx_vec(int N, int terms, float* x, float* result)
+{
+    for (int i = 0; i &lt; N; i += 8)
+    {
+        __m256 origx = _mm256_load_ps(&x[i]);
+        __m256 value = origx;
+        __m256 numer = _mm256_mul_ps(origx,
+                           _mm256_mul_ps(origx, origx));
+        __m256 denom = _mm256_broadcast_ss((float*)&6); // 3!
+
+        int sign = -1;
+        for (int j = 1; j &lt;= terms; j++)
+        {
+            __m256 tmp = _mm256_div_ps(
+                _mm256_mul_ps(_mm256_set1_ps((float)sign), numer),
+                denom);
+            value = _mm256_add_ps(value, tmp);
+            numer = _mm256_mul_ps(numer,
+                     _mm256_mul_ps(origx, origx));
+            // denom update omitted here for brevity
+            sign *= -1;
+        }
+        _mm256_store_ps(&result[i], value);
+    }
+}</code></pre>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) How many <code>float</code> elements are processed simultaneously in each loop iteration? (1
+                        mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>A <code>__m256</code> register holds 256 bits, so for 32‑bit <code>float</code>s it holds
+                                8 elements; thus 8 elements are processed simultaneously per loop iteration.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الـ Register (المخزن) حجمه 256 بت. واحنا عارفين إن الـ float الواحد بياخد 32 بت. لو معالك
+                                "أتوبيس" 256 كرسي، والراكب بياخد 32، يبقى هتشيل كام راكب؟ بالظبط، 256 / 32 = 8 أرقام
+                                (floats).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Explain the purpose of <code>_mm256_broadcast_ss</code> in this context. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p><code>_mm256_broadcast_ss</code> takes a single scalar <code>float</code> and replicates
+                                it into all 8 lanes of a <code>__m256</code> register so that the same scalar value
+                                (e.g., 3! = 6) can be used in parallel operations on all vector elements without loading
+                                it separately for each lane.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>دالة <code>broadcast_ss</code> دي بتوفر مجهود. بدل ما تحمل الرقم 6 من الذاكرة 8 مرات، هي
+                                بتجيبه مرة واحدة وتعمله "Copy-Paste" في الـ 8 خانات بتوع الـ Vector. كأنك بتقول "يا
+                                جماعة، كلكم هتضربوا في 6".</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (c) Why is 32-byte alignment important for arrays used with these AVX loads/stores? (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>AVX loads and stores are optimized when the memory address is 32‑byte aligned, which
+                                avoids crossing cache-line boundaries, reduces the number of memory transactions, and
+                                prevents potential penalties or faults that can occur with misaligned accesses; the
+                                lecture highlights the use of <code>__declspec(align(32))</code> and custom aligned
+                                allocation routines for this reason.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>موضوع الـ Alignment ده زي "الركنة الصح". الـ AVX سريع جداً بس بيحب النظام. لازم البيانات
+                                تبدأ من عناوين بتقبل القسمة على 32 (مضاعفات الـ 32). لو البيانات "مرحلة" (misaligned)،
+                                البروسيسور هيتعطل عشان يلمها من هنا ومن هنا، وده بيضيع وقت.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “Vector program (using AVX intrinsics)”, AVX intrinsic descriptions,
+                and the alignment discussion with <code>__declspec(align(32))</code> and aligned malloc/free.
+            </div>
+        </div>
+    </div>
+
+    <!-- Q3 -->
+    <!-- Q3 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 3</span>
+            <span class="question-marks">5 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>Multi‑Threading and Latency Hiding</h3>
+            <p>
+                You have a core with 8 SIMD ALUs executing a throughput-oriented workload. Each thread processes 8
+                elements
+                and then stalls for approximately 100 cycles waiting for data from memory.
+            </p>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) Explain how interleaving multiple threads on this core can hide memory latency. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Multi‑threading hides latency by switching the core to execute instructions from other
+                                runnable threads whenever one thread stalls on a long‑latency memory access; while one
+                                thread waits ~100 cycles for data to return, other threads’ instructions keep the ALUs
+                                busy, similar to the diagrams where multiple threads are interleaved on a single core.
+                            </p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>لعبة الاستغماية مع الذاكرة: الفكرة كلها إننا "منوقفش المكن". لما مسار (Thread) يحتاج حاجة
+                                من الذاكرة ويضطر يستنى (Stall)، البروسيسور مش بيقعد حاطط إيده على خده. بيروح قالب فوراً
+                                على مسار تاني جاهز للشغل. فكأننا بنملى الفراغات بشغل.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Assuming each thread performs negligible computation compared to the 100-cycle stall,
+                        approximately how many threads would you need to fully hide the latency on this core? (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>If each thread performs almost no computation but then stalls for about 100 cycles, you
+                                need on the order of 100 independent threads so that, in each cycle while one thread is
+                                stalled, another has ready work to issue; the lecture’s fictitious multi‑core and GPU
+                                examples show many more execution contexts than ALUs (e.g., up to 48 warps per core on
+                                GTX 480) to achieve this kind of latency hiding.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>لو الواحد بيعطل 100 دورة، يبقى محتاجين طابور فيه 100 واحد عشان نغطي الوقت ده. كل ما واحد
+                                يعطل، نلاقي غيره جاهز، وهكذا لحد ما الأولاني يرجعله طلبه.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (c) Discuss the trade-off between having many small thread contexts and a few large thread
+                        contexts. (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Many small contexts improve latency hiding (more threads to schedule when others stall)
+                                but require more storage for contexts and can increase working set size, reducing cache
+                                effectiveness; fewer large contexts reduce context storage and may improve per-thread
+                                locality but give the scheduler fewer options to hide latency, as illustrated by the
+                                “many small contexts (18 threads)” versus “four large contexts” examples.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الفرق بسيط: سياقات صغيرة (Small Contexts) = "عفش قليل"، فنقدر نجيب مسارات كتير أوي ونخبي
+                                التأخير براحتنا. سياقات كبيرة (Large Contexts) = "عفش كتير"، فالمكان يتزحم ومقدرش أشغل
+                                غير كام واحد بس، ولو كلهم عطلوا.. الجهاز هيقف.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “Multi-threading reduces Stalls”, “Many small contexts (high latency
+                hiding ability)” and “Four large contexts (low latency hiding ability)”, and the fictitious
+                multi-core/GPU execution context slides.
+            </div>
+        </div>
+    </div>
+
+    <!-- Q4 -->
+    <!-- Q4 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 4</span>
+            <span class="question-marks">5 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>Thread Divergence and Conditional Execution</h3>
+            <p>Consider the following per-element computation executed on an 8‑wide SIMD unit over an array
+                <code>A</code>:
+            </p>
+            <pre><code>float x = A[i];
+if (x &gt; 0) {
+    float tmp = exp(x, 5.0f);
+    tmp *= kMyConst1;
+    x = tmp + kMyConst2;
+} else {
+    float tmp = kMyConst1;
+    x = 2.0f * tmp;
+}
+result[i] = x;</code></pre>
+            <p>
+                Suppose for a particular 8-element group, the branch outcomes are <code>T T F T F F F F</code>.
+            </p>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) Define “divergent execution” and explain why it occurs in this case. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Divergent execution is a lack of instruction stream coherence where elements in a SIMD
+                                group follow different control-flow paths; here, some elements (T) take the “if” branch
+                                and others (F) take the “else” branch, so the single shared instruction stream cannot
+                                steer all 8 elements through the same instructions without executing both paths.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>التباعد ده زي ما تكون فرقة ماشية مع بعض، وفجأة طريقهم اتقسم نصين. شوية عايزين يروحوا يمين
+                                وشوية شمال. بس المشكلة إنهم لازم يمشوا خطوة بخطوة مع بعض (SIMD). فبيحصل إننا بنمشي مع
+                                بتوع اليمين الأول والباقي واقف مستني، وبعدين نرجع نمشي مع بتوع الشمال والباقي واقف. ده
+                                بيعطل الدنيا.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Qualitatively, what fraction of the SIMD ALUs are doing useful work during the if/else
+                        region in the worst divergence case, according to the lecture? (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>In the worst divergence case described in the lecture, only 1 out of 8 SIMD lanes does
+                                useful work on a given branch, so performance can drop to about <code>1/8</code> (12.5%)
+                                of peak; with the <code>T T F T F F F F</code> mask, one branch uses 3/8 lanes and the
+                                other 5/8 lanes, but the lecture explicitly notes the worst case as 1/8.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>في أسوأ الظروف، لو كل واحد عايز يروح في سكة لوحده، الكفاءة ممكن تنزل للثمن (1/8). يعني
+                                واحد بس اللي شغال والـ 7 الباقيين عاطلين في كل خطوة.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (c) Describe how masking is used to implement such divergent branches on SIMD hardware. (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>SIMD hardware executes both branch bodies under different masks: when evaluating the “if”
+                                body, a mask enables only lanes whose condition is true and suppresses writes for
+                                others; then it executes the “else” body under the inverse mask, so only false lanes
+                                update their results, after which execution reconverges with all lanes executing the
+                                same instructions again.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>القناع (Masking) ده زي "كاتم الصوت" أو زرار التشغيل. لما نكون بننفذ كود الـ if، بنحط قناع
+                                يسمح بس للي الشرط عندهم تحقق إنهم يكتبوا النتايج، والباقي "صامت". ولما نروح للـ else،
+                                نعكس القناع.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “What about conditional execution?”, “Mask (discard) output of ALU”,
+                “After branch: continue at full performance”, and the “Worst case: 1/8 peak performance” note.
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header">SECTION 2: THEORETICAL CONCEPTS (20 marks)</div>
+
+    <!-- Q5 -->
+    <!-- Q5 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 5</span>
+            <span class="question-marks">6 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>Three Major Processor Ideas</h3>
+            <p>The lecture summarizes three major ideas used by modern processors to exploit parallel execution.</p>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) Explain the idea of using multiple cores (multi‑core) and what kind of parallelism it
+                        exploits. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>The multi‑core idea uses increasing transistor counts to add multiple simpler cores
+                                rather than a single very complex core, providing thread‑level parallelism where each
+                                core executes its own instruction stream; software explicitly creates threads (e.g.,
+                                with pthreads), and different cores can run different parts of the program concurrently.
+                            </p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الـ Multi-core: بدل "سوبر مان" واحد (نواة معقدة)، بنجيب "فريق كورة" (نوى أبسط). كل لاعب
+                                (نواة) بيمسك ملف أو برنامج يخلصه مع نفسه (Thread-Level).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Explain the idea of amortizing instruction stream cost over many ALUs (SIMD) and what kind
+                        of parallelism it exploits. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>The SIMD idea adds multiple ALUs under a single fetch/decode unit so that one instruction
+                                stream operates on many data elements in parallel (data‑level parallelism); the cost and
+                                complexity of instruction stream management is amortized across many ALUs, increasing
+                                compute capability with relatively little extra control logic.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الـ SIMD: دي سياسة "اضرب دستة عصافير بحجر". أمر واحد بيطلع من القائد، بيتنفذ على 8 أو 16
+                                رقم في نفس اللحظة. توفير في الإدارة وتركيز في الحسابات.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (c) Explain the idea of multi‑threading and how it improves utilization of processing resources.
+                        (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Multi‑threading interleaves execution of many threads on the same core to hide long
+                                latencies (especially memory); when one thread stalls, the core switches to another
+                                runnable thread, filling otherwise idle cycles and making more efficient use of
+                                superscalar and SIMD resources, at the cost of more context storage and potentially
+                                higher per‑thread latency.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الـ Multi-threading: دي "خفة اليد". لما مسار يعطل، التاني يدخل مكانه في نفس اللحظة.
+                                البروسيسور (Core) مبيقفش، شغال الله ينور 24 ساعة.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “CPU: Multi-Core Era”, “Add ALUs to increase compute capability
+                (SIMD processing)”, “Multi-threading reduces Stalls”, and the final “Summary: parallel execution” slide.
+            </div>
+        </div>
+    </div>
+
+    <!-- Q6 -->
+    <!-- Q6 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 6</span>
+            <span class="question-marks">5 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>Memory Latency and Bandwidth</h3>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) Define memory latency and give a typical example value from the lecture. (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Memory latency is the time from issuing a memory request (load or store) until it is
+                                serviced by the memory system; the lecture gives a typical value of about 100 cycles or
+                                100 ns for a main memory access.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الفرق بين "السرعة" و "الزحمة": الـ Latency (التأخير): ده الوقت اللي بتستناه عشان طلبك
+                                يوصل. زي الديليفري لما يقولك "قدامي ساعة".</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Define memory bandwidth and give an example value for a modern CPU memory system from the
+                        lecture. (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Memory bandwidth is the rate at which data can be delivered from the memory system to the
+                                processor; for a typical CPU example, the lecture shows about 21 GB/s for a DDR3 DRAM
+                                system attached to a multi‑core CPU.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الـ Bandwidth (العرض): دي كمية البضاعة اللي بتتحرك في الشارع في الثانية. كل ما الشارع
+                                يوسع، العربيات تزيد.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (c) Distinguish between latency hiding and latency reduction techniques, using examples from the
+                        lecture. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Latency reduction techniques aim to make each access intrinsically faster (e.g., caches
+                                that keep data close to the core or higher‑bandwidth memory), while latency hiding
+                                techniques mask the delay by doing other useful work while waiting; prefetching and
+                                multi‑threading are described as latency hiding mechanisms that reduce stalls rather
+                                than the underlying latency.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>تقليل (Reduction) vs إخفاء (Hiding): التقليل: يعني تجيب "موتوسيكل سريع" أو تقرب المخزن
+                                (Caches). الإخفاء: يعني وانت مستني الديليفري، تقوم تروق الشقة (Multi-threading). الوقت
+                                هو هو، بس أنت منجزت شغل ومحسيتش بالملل.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part D -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (d) Name two hardware techniques mentioned in the lecture that help hide or tolerate memory
+                        latency. (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Two hardware techniques from the lecture are (1) prefetching, which speculatively brings
+                                data into caches before it is needed, and (2) multi‑threading, which switches to other
+                                threads while one thread waits on a memory access.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>أدوات الإخفاء: الـ Prefetching (التوقع) والـ Multi-threading (تعدد المسارات ).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “Terminology – Memory Latency / Memory Bandwidth”, “Caches Reduce
+                Length Of Stalls”, “Prefetching reduces stalls (hides latency)”, and “Multi-threading reduces Stalls”.
+            </div>
+        </div>
+    </div>
+
+    <!-- Q7 -->
+    <!-- Q7 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 7</span>
+            <span class="question-marks">5 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>Coherent vs Divergent Execution</h3>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) Define “Coherent Execution” (instruction stream coherence) and explain when it is necessary
+                        for efficiency. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Coherent execution (instruction stream coherence) means that the same instruction
+                                sequence applies to all elements being operated on simultaneously; it is necessary for
+                                efficient SIMD operation because a single fetch/decode unit is shared by multiple ALUs,
+                                so lack of coherence forces the hardware to serialize or mask off lanes, wasting SIMD
+                                capacity.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>التناغم vs الهرجة: Coherent (متماسك): يعني فرقة موسيقية ماشية على نوتة واحدة. ضروري جداً
+                                للـ SIMD عشان في "مايسترو" واحد بيحرك الكل.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Define “Divergent Execution”. (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Divergent execution is defined as a lack of instruction stream coherence, i.e., when
+                                different elements within a SIMD group follow different control paths, such as when
+                                branches take different directions for different data elements.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>Divergent (متباعد): يعني كل واحد بيعزف بمزاجه. ده بيحصل لما الـ If conditions تفرق
+                                العناصر عن بعض.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (c) According to the lecture, is coherent execution more critical for SIMD parallelism or for
+                        multi-core parallelism? Justify. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Coherent execution is more critical for SIMD than for multi-core, because in SIMD all
+                                ALUs share one instruction stream and divergence reduces utilization (e.g., to 1/8 of
+                                peak in the worst case), whereas in a multi‑core system each core has its own
+                                fetch/decode unit and can execute completely different instruction streams without loss
+                                of efficiency.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الـ Coherence حياة أو موت للـ SIMD. لو مفيش تناغم، الأداء بيقع (زي ما شوفنا 1/8). لكن الـ
+                                Multi-core مش فارق معاه، كل نواة "برنس" في نفسها وليها مايسترو (Control Unit) خاص بيها،
+                                فمش محتاجة تبص في ورقة غيرها.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “Terminology” slide defining “Coherent Execution” and “Divergent
+                Execution” and noting that coherence is required for efficient SIMD but “is NOT necessary for efficient
+                parallelization across cores”.
+            </div>
+        </div>
+    </div>
+
+    <!-- Q8 -->
+    <!-- Q8 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 8</span>
+            <span class="question-marks">4 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>Explicit vs Implicit SIMD</h3>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) Distinguish between “Explicit SIMD” on CPUs and “Implicit SIMD” on GPUs as described in the
+                        lecture. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Explicit SIMD refers to SIMD parallelization done at compile time where the compiler
+                                emits vector instructions (e.g., AVX) and the programmer may use intrinsics or rely on
+                                auto‑vectorization; implicit SIMD on many GPUs runs N instances of a scalar program
+                                together, with hardware mapping those instances to SIMD ALUs so the program binary
+                                itself appears scalar.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الواضح والمستخبي: Explicit (صريح): ده شغل المحترفين على الـ CPU. أنت بتكتب كود AVX بنفسك،
+                                زي اللي بيسوق مانيوال، متحكم في كل غيار. Implicit (ضمني): ده شغل الـ GPU. أنت بتكتب كود
+                                "عادي" لعنصر واحد، وكارت الشاشة هو اللي بيجمعهم ويشغلهم حزم (SIMD) مع نفسه. زي
+                                الأتوماتيك، مريح وسريع.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Give one example of each and briefly state one advantage of each approach. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>An explicit SIMD example is a C function using AVX intrinsics like
+                                <code>_mm256_mul_ps</code> and <code>_mm256_add_ps</code>, with the advantage that the
+                                programmer can see and control the exact vector operations; an implicit SIMD example is
+                                a GPU kernel launched over many threads where the hardware groups threads (e.g., into
+                                warps of width 16–32) and executes them in lockstep, with the advantage of a simpler
+                                scalar programming model at the source level.
+                            </p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الميزة: الصريح بيديك تحكم كامل (Control). الضمني أسهل بكتير في البرمجة (Ease of Use) ومش
+                                لازم تكون خبير هاردوير.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “SIMD Execution on Modern CPUs” (Explicit SIMD) and “SIMD execution
+                on many modern GPUs” (Implicit SIMD).
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header">SECTION 3: COMPARISON &amp; ANALYSIS (8 marks)</div>
+
+    <!-- Q9 -->
+    <!-- Q9 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 9</span>
+            <span class="question-marks">4 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>CPU vs GPU Memory Hierarchies</h3>
+            <p>Compare the memory hierarchy of a multi-core CPU and a GPU as described in the lecture.</p>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) Describe the main structural differences between the CPU and GPU memory hierarchies shown
+                        (cache sizes and memory type/bandwidth). (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>The CPU diagram shows per-core L1 (32 KB) and L2 (256 KB) caches plus a large shared L3
+                                (8 MB) connected to DDR3 DRAM at ~21 GB/s, whereas the GPU diagram shows relatively
+                                small per-core scratchpad/L1 (64 KB), texture cache (12 KB), shared execution contexts
+                                (128 KB), a smaller shared L2 (768 KB), and much higher-bandwidth GDDR5 memory (~177
+                                GB/s).</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الفرق في التصميم: الـ CPU دي "دماغ كبيرة" (L3 Cache ضخم 8MB) بس الطريق ليها ضيق (21
+                                GB/s). الـ GPU دي "عضلات كتير" بس ذاكرتها الشخصية صغيرة (L1 فتافيت) لكن الطريق السريع
+                                بتاعها واسع جداً (177 GB/s).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Explain how these differences reflect a latency-oriented design for CPUs versus a
+                        throughput-oriented design for GPUs. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>CPUs use big caches and modest bandwidth to reduce average latency to memory and rely
+                                heavily on caches and prefetching to keep a few threads running fast, while GPUs use
+                                many threads, small caches, and very high bandwidth, relying mainly on multi‑threading
+                                to hide latency and maximize overall throughput rather than minimizing individual access
+                                latency.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الـ CPU معمولة عشان "تنجزك" (Latency Oriented)، فبتحط كاش كبير عشان متستناش. الـ GPU
+                                معمولة عشان "تفرم" (Throughput Oriented)، مش مهم العملية الواحدة تاخد وقت قد إيه، المهم
+                                إن في الآخر بطلع ملايين العمليات في نفس الثانية بمساعدة الطريق الواسع ده والمسارات
+                                الكتير.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “CPU vs. GPU memory hierarchies” slide, including cache sizes and 21
+                GB/s vs 177 GB/s bandwidth numbers.
+            </div>
+        </div>
+    </div>
+
+    <!-- Q10 -->
+    <!-- Q10 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 10</span>
+            <span class="question-marks">4 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>Bandwidth vs Computation and Arithmetic Intensity</h3>
+            <p>The lecture considers the element-wise product <code>C[i] = A[i] * B[i]</code> on a NVIDIA GTX 480 GPU.
+            </p>
+            <p>Assume:</p>
+            <ul>
+                <li>Each element is a 32-bit float (4 bytes).</li>
+                <li>For each <code>i</code>, you load <code>A[i]</code>, load <code>B[i]</code>, and store
+                    <code>C[i]</code>.
+                </li>
+                <li>The GPU can perform 480 MULs per clock at 1.4 GHz, for a peak of about 1.345 TFLOPS with FMA.</li>
+                <li>The memory bandwidth is about 177 GB/s.</li>
+            </ul>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) How many bytes are moved per element update (one multiply)? (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>There are 3 memory operations per element: load <code>A[i]</code>, load
+                                <code>B[i]</code>, and store <code>C[i]</code>, for a total of 3 × 4 = 12 bytes per
+                                multiply.
+                            </p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>حسبة "فيراري في زحمة رمسيس": كل عملية ضرب يتيمة محتاجة 3 مشاوير للذاكرة: نجيب A و B ونخزن
+                                C. كل واحد 4 بايت، يعني المجموع 12 بايت نقل لكل عملية ضرب واحدة.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) Roughly how much bandwidth would be required to sustain peak compute performance on this
+                        operation, according to the lecture? (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>The lecture notes that to keep the functional units fully busy on this pattern, the
+                                system would need on the order of 8 TB/s of memory bandwidth, far above the available
+                                177 GB/s.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>عشان نشغل الكارت ده بطاقته القصوى (Peak Compute)، محتاجين طريق ينقل 8000 جيجابايت في
+                                الثانية (8 TB/s).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (c) What approximate efficiency (fraction of peak) does the lecture state is achievable given
+                        177 GB/s? (1 mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>With only 177 GB/s available versus the 8 TB/s requirement, the lecture estimates that
+                                the achievable efficiency is about 2% of peak compute performance on this operation.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>بس إحنا غلابة ومعانا 177 GB/s بس. يعني معانا حوالي 2% بس من السرعة المطلوبة. الكارت قاعد
+                                فاضي 98% من الوقت مستني البيانات تيجي.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part D -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (d) Define “Arithmetic Intensity” and explain why this vector multiply is bandwidth-bound. (1
+                        mark)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p>Arithmetic Intensity is the ratio of math operations to data access operations (or FLOPs
+                                per byte); this vector multiply has very low arithmetic intensity—only one multiply per
+                                12 bytes—so performance is limited by memory bandwidth rather than compute capability,
+                                making it bandwidth-bound.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p>الكثافة الحسابية (Arithmetic Intensity) واطية جداً هنا. بننقل بيانات كتير (12 بايت) عشان
+                                نعمل عملية واحدة يتيمة. فعنق الزجاجة هنا هو الـ Bandwidth مش سرعة الحساب.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – “Thought experiment” and “Bandwidth Limited!” slides, including the
+                12 bytes per MUL, ~8 TB/s requirement, and ~2% efficiency discussion, and the “Arithmetic Intensity”
+                definition.
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header">SECTION 4: CODE VERIFICATION (2 marks)</div>
+
+    <!-- Q11 -->
+    <!-- Q11 -->
+    <div class="question">
+        <div class="question-header">
+            <span class="question-number">Question 11</span>
+            <span class="question-marks">2 Marks</span>
+        </div>
+        <div class="question-content">
+            <h3>True/False Code and Concept Verification</h3>
+
+            <div class="qa-container">
+                <!-- Part A -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (a) In a 1D CUDA kernel, the following code is used to compute a global thread index:<br />
+                        <code>int idx = threadIdx.x + blockIdx.x * blockDim.x;</code><br />
+                        State whether this is correct and justify your answer. (2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p><strong>Answer:</strong> This expression is correct for computing the 1D global thread
+                                index in CUDA; it multiplies the block index by the number of threads per block to get
+                                the starting index for the block and then adds the thread’s index within the block,
+                                yielding a unique global index for each thread in a 1D grid.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p><strong>صح الصح:</strong> دي معادلة "العنوان" في CUDA. الـ
+                                <code>blockIdx.x * blockDim.x</code> بتوصلك لأول الشارع (البلوك)، والـ
+                                <code>threadIdx.x</code> بتوصلك لرقم البيت (المسار ) جوه الشارع ده. فالمجموع يديك
+                                العنوان الفريد لكل مسار في الشبكة كلها (Grid).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B (Bonus) -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        (b) <span class="small">(Bonus)</span> “Prefetching and multi-threading are both latency
+                        reduction techniques that directly decrease the time required to complete a memory access.”
+                        State whether this sentence is true or false and justify. (Bonus 2 marks)
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">ANSWER</div>
+                            <p><strong>Answer:</strong> The statement is false; the lecture explicitly classifies
+                                prefetching and multi‑threading as latency <em>hiding</em>, not latency reducing,
+                                techniques—they do not shorten the intrinsic memory access time, but instead reduce
+                                stalls by overlapping memory accesses with other useful work.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar"> </div>
+                            <p><strong>غلط طبعاً:</strong> دول اسمهم "مسكنات" (Hiding) مش "علاج" (Using). هما مش بيسرعوا
+                                الذاكرة نفسها (الـ Latency ثابت)، هما بس بيخلوك "تتسلى" في شغل تاني عقبال ما البيانات
+                                توصل، فمتحسش بالملل (Stalls). التقليل الحقيقي (Reduction) بيكون بالـ Caches.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reference small" style="margin-top: 20px;">
+                📎 Reference: Lecture_5-and-6.pdf – CUDA/threading concepts and “Prefetching reduces stalls (hides
+                latency)” discussion.
+            </div>
+        </div>
+    </div>
+
+    <h2>END OF EXAM</h2>
+    <p class="small">
+        All questions and answers are based solely on the content of Lecture_5-and-6.pdf (Parallel Execution and Memory
+        Systems). No external material has been used.[file:2]
+    </p>
+
+</body>
+
+</html>

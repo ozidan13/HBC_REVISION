@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPC Exam: Parallel Extremes, ILP & Power Wall</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #c084fc;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(192, 132, 252, 0.1) 0px, transparent 50%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Section Styling */
+        .section-header {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 60px;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            padding-left: 20px;
+        }
+
+        .qa-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .qa-pair {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 30px;
+        }
+
+        .qa-pair:last-child {
+            border-bottom: none;
+        }
+
+        .qa-question {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .qa-answer-block {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            background: linear-gradient(to right, rgba(30, 41, 59, 0.4), rgba(30, 41, 59, 0.2));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .qa-answer-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            opacity: 0.8;
+        }
+
+        .qa-english,
+        .qa-arabic {
+            position: relative;
+        }
+
+        .qa-arabic {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 20px;
+            margin-top: 10px;
+            direction: rtl;
+            font-family: 'Cairo', sans-serif;
+            color: var(--secondary);
+            font-size: 1.1em;
+            line-height: 1.7;
+        }
+
+        .label-eng,
+        .label-ar {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.7;
+        }
+
+        .label-eng {
+            color: var(--primary);
+        }
+
+        .label-ar {
+            color: var(--success);
+        }
+
+        /* General Question Container */
+        .question {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .question:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.3);
+            border-color: rgba(56, 189, 248, 0.2);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 15px;
+        }
+
+        .question-number {
+            font-family: 'Indie Flower', cursive;
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .question-marks {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .question-content p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #f1f5f9;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin: 20px 0;
+            overflow-x: auto;
+            border: 1px solid rgba(56, 189, 248, 0.1);
+            position: relative;
+        }
+
+        .code-line {
+            display: block;
+            min-height: 1.5em;
+        }
+
+        .code-comment {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .code-keyword {
+            color: #f472b6;
+            font-weight: 600;
+        }
+
+        .code-type {
+            color: #c084fc;
+        }
+
+        .code-func {
+            color: #38bdf8;
+        }
+
+        .code-pragma {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        .highlight {
+            color: var(--warning);
+            font-weight: bold;
+            background: rgba(251, 191, 36, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .formula-box {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            font-weight: 700;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 3px solid var(--primary);
+            color: var(--text);
+        }
+
+        .info-item strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .warning-box {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #fda4af;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 80px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ High Performance Computing Exam</h1>
+            <h2>Lecture 3-4: Parallel Extremes, ILP & Power Wall</h2>
+            <p style="margin-top: 15px; color: #9ca3af;">Moore's Law, ILP limits, frequency scaling, multicore
+                motivation, Amdahl's Law</p>
+        </header>
+
+
+
+        <!-- SECTION 1: MOTIVATION & MOORE'S LAW -->
+        <div class="section section-motivation">
+            <h2 class="section-header">Section 1: Parallel Computing Motivation (35%)</h2>
+            <p class="section-description">
+                Understanding why parallel computing became essential: Moore's Law, performance trends, and the 2002
+                turning point
+            </p>
+
+            <!-- Question 1 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 1</span>
+                    <span class="question-marks">10 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain Moore's Law and the 2002 turning point in processor design.</strong></p>
+                    <div class="info-item" style="margin-bottom: 20px;">
+                        <strong>Context:</strong> From the voice notes, this is mentioned as <span class="highlight">"#1
+                            - Parallel Extremes as it came in Term 1"</span> - understanding the shift from sequential
+                        to parallel computing.
+                    </div>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Moore's Law -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. State Moore's Law as defined in the lecture (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Moore's Law:</strong> "The number of transistors on integrated circuits
+                                        doubles approximately every two years."</li>
+                                    <li>This observation held true for decades, driving exponential growth in computing
+                                        power.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>قانون مور:</strong></p>
+                                <p>ببساطة، "عدد الترانزستورات اللي بنقدر نحطها على الشريحة بيتضاعف كل سنتين". القانون ده
+                                    فضل شغال معانا سنين طويلة وخلى الكمبيوترات سرعتها تزيد بجنون.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: 2002 Turning Point -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. Describe what happened around 2002 in processor evolution (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>The Plateau:</strong> Single-core performance growth (clock speed and
+                                        ILP) suddenly slowed down significantly.</li>
+                                    <li><strong>Limitations Hit:</strong> Processors hit the "Power Wall" (too hot) and
+                                        the "ILP Wall" (diminishing returns).</li>
+                                    <li><strong>Shift:</strong> The industry was forced to switch from making faster
+                                        single cores to making <strong>Multi-core processors</strong>.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>نقطة التحول في 2002:</strong></p>
+                                <p>لحد 2002 كنا بنسرع البروسيسور بإننا نعلي سرعته (Clock Speed). فجأة في 2002، الموضوع
+                                    ده وقف (Plateau). ليه؟ عشان البروسيسور بقى بيسخن لدرجة مستحيلة (Power Wall) ومبقيناش
+                                    عارفين نسرعه أكتر من كده بطرق ذكية (ILP Limit). فالحل كان إننا ننقل على الـ
+                                    Multi-core.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part C: Pre-2002 Drivers -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>3. Explain the two main factors that drove performance improvements before 2002 (3
+                                marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Frequency Scaling (~50%/year):</strong> Increasing the clock speed (MHz
+                                        to GHz) directly increased speed.</li>
+                                    <li><strong>Instruction-Level Parallelism (ILP) (~20%/year):</strong> Intelligent
+                                        hardware (pipelining, out-of-order execution) executed multiple instructions at
+                                        once automatically.</li>
+                                    <li><strong>Combined:</strong> roughly 70% annual improvement.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>كنا بنسرع إزاي قبل 2002؟</strong></p>
+                                <p>بطريقتين:</p>
+                                <ol>
+                                    <li><strong>Frequency Scaling:</strong> بنزود سرعة العداد (Clock) ودة كان بيفرق جامد
+                                        (50% سنوياً).</li>
+                                    <li><strong>ILP:</b> بنخلي البروسيسور ذكي ويشغل كذا أمر مع بعض في نفس الوقت من غير
+                                            ما المبرمج يتدخل (20% سنوياً).</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part D: Why they stopped -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>4. Why did both factors stop being effective after 2002? (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Frequency Scaling stopped because of the <span class="highlight">Power
+                                                Wall</span>:</strong> Power increases with frequency and voltage squared
+                                        ($P = CV^2F$). Cooling became impossible.</li>
+                                    <li><strong>ILP stopped because of <span class="highlight">Diminishing
+                                                Returns</span>:</strong> We had already extracted most available
+                                        parallelism; adding more complex hardware yielded minimal gains.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>ليه وقفوا؟</strong></p>
+                                <ul>
+                                    <li><strong>السرعة (Frequency):</strong> وقفت عشان الحرارة والكهرباء زادوا بجنون
+                                        (Power Wall) ومبقاش ينفع نبرد البروسيسور بهواء عادي.</li>
+                                    <li><strong>الذكاء (ILP):</strong> وقف عشان خلاص جبنا آخره. تكلفة إننا نخلي
+                                        البروسيسور أذكى بقت أغلى بكتير من المكسب اللي بناخده منه.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 2</span>
+                    <span class="question-marks">8 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain why parallel computing became necessary based on the lecture.</strong></p>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Applications -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. List three application domains that require high-performance computing (3
+                                marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Climate Modeling & Weather Prediction:</strong> Massive fluid dynamics
+                                        simulations.</li>
+                                    <li><strong>Drug Discovery (Protein Folding):</strong> Simulating molecular
+                                        interactions.</li>
+                                    <li><strong>Scientific Simulations:</b> Physics, astrophysics, and engineering crash
+                                            tests.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>تطبيقات محتاجة HPC:</strong></p>
+                                <p>حاجات حساباتها تقيلة جداً:</p>
+                                <ul>
+                                    <li>توقعات الطقس والمناخ.</li>
+                                    <li>اكتشاف الأدوية وتصميم البروتينات.</li>
+                                    <li>المحاكاة العلمية (زي الفيزياء والفضاء).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: Why Single Core failed -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. Explain why single-core performance improvements are no longer sufficient (3
+                                marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Frequency Plateau:</strong> Clock speeds stopped increasing around 3-4
+                                        GHz due to power limits.</li>
+                                    <li><strong>ILP Limits:</strong> Hardware complexity reached a point of diminishing
+                                        returns.</li>
+                                    <li><strong>Data Explosion:</strong> Applications demand much more power (Big Data,
+                                        AI) than single cores can provide.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>ليه الكور الواحد مبقاش ينفع؟</strong></p>
+                                <p>عشان خلاص مش عارفين نسرعه أكتر من كده (بسبب الحرارة وحدود التصنيع)، وفي نفس الوقت
+                                    البرامج والبيانات بقت أضخم وأتقل بكتير من قدرة مخ واحد.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part C: Solution -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>3. What is the fundamental solution adopted by the industry? (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Multi-core Processors:</strong> Instead of one giant, hot, fast core,
+                                        use many smaller, efficient cores.</li>
+                                    <li>This shifts the burden of performance from hardware (automatic) to software
+                                        (parallel programming).</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>الحل البديل:</strong></p>
+                                <p>النقلة للـ <strong>Multi-core</strong>. بدل ما نعمل "سوبر مان" واحد (بيسخن ويفرقع)،
+                                    نعمل "فريق" من ناس عاديين يشتغلوا مع بعض. بس العيب إن المبرمج (إنت) اللي لازم يقسم
+                                    الشغل عليهم.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: ILP & POWER WALL -->
+        <div class="section section-ilp">
+            <h2 class="section-header">Section 2: ILP & Power Wall (40%)</h2>
+            <p class="section-description">
+                Understanding Instruction-Level Parallelism limits and the power equation that forced the shift to
+                multicore
+            </p>
+
+            <!-- Question 3 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 3</span>
+                    <span class="question-marks">10 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain Instruction-Level Parallelism (ILP) and why it reached its limits.</strong></p>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: ILP Definition -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. Define ILP with an example (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Definition:</strong> Overlapping the execution of instructions that are
+                                        independent of each other within a sequential stream.</li>
+                                    <li><strong>Example:</strong> In `a = x*x; b = y*y;`, the two multiplications are
+                                        independent. ILP allows the CPU to calculate `x*x` and `y*y` simultaneously.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>يعني إيه ILP؟</strong></p>
+                                <p>إن البروسيسور يكون "نبيـه". بدل ما يستنى كل أمر يخلص عشان يبدأ اللي بعده، بيبص بصه
+                                    سريعة لقدام. لو لقى أمرين ملهمش علاقة ببعض (زي `x*x` و `y*y`)، بيشغلهم في نفس الوقت.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: Superscalar -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. Describe superscalar execution (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Superscalar:</strong> A CPU architecture capable of executing more than
+                                        one instruction per clock cycle.</li>
+                                    <li>It uses multiple functional units (ALUs) to handle independent instructions in
+                                        parallel.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>يعني إيه Superscalar؟</strong></p>
+                                <p>زي العامل اللي عنده "كذا إيد". البروسيسور جواه كذا وحدة حساب (ALUs)، فبيقدر يخلص كذا
+                                    عملية حسابية في "دقة ساعة" واحدة (Cycle).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part C: Why ineffective -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>3. Why did ILP extraction become ineffective around 2002? (4 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Limited parallelism in code:</strong> Real-world programs have many
+                                        dependencies (instruction B needs result of A). Average extractable ILP is small
+                                        (~2-3 instructions).</li>
+                                    <li><strong>Complexity Explosion:</strong> The hardware logic needed to find more
+                                        independent instructions became insanely complex and power-hungry for very
+                                        little gain.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>ليه الـ ILP جاب آخره؟</strong></p>
+                                <p>عشان "عصرنا الليمونة". معظم البرامج العادية مفيهاش حاجات كتير ينفع تتعمل مع بعض
+                                    (dependencies). وتكلفة إننا نخلي البروسيسور أذكى بقت غالية جداً (كهرباء ومساحة)
+                                    والمكسب بسيط.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 4</span>
+                    <span class="question-marks">12 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain the Power Wall and why it forced the shift to multi-core processors.</strong></p>
+                    <div class="formula-box">
+                        <p style="font-size: 1.1em; margin-bottom: 10px;"><strong>Power Equation:</strong></p>
+                        <div class="formula">Power = C × V² × F</div>
+                    </div>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Equation Components -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. Explain each component of the power equation (C, V, F) (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>C (Capacitance):</strong> The load of the circuit (how many
+                                        transistors).</li>
+                                    <li><strong>V (Voltage):</strong> The operating voltage. This is critical because
+                                        it's slightly squared.</li>
+                                    <li><strong>F (Frequency):</strong> The clock speed (cycles per second).</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>مكونات معادلة الكهرباء:</strong></p>
+                                <ul>
+                                    <li><strong>C:</strong> حجم الحمل (عدد الترانزستورات).</li>
+                                    <li><strong>V:</strong> الفولت. وده "البعبع" لأنه متربع (Squared).</li>
+                                    <li><strong>F:</strong> السرعة.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: V^2 Importance -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. Why does power increase with the square of voltage? (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li>Because Power is related to both the energy per transition ($1/2 C V^2$) and the
+                                        frequency.</li>
+                                    <li>Small increases in Voltage causing massive increases in Power. Conversely,
+                                        reducing voltage yields massive savings.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>ليه الحوار كله في الفولت (V²)؟</strong></p>
+                                <p>عشان دي علاقة تربيعية. لو قللت الفولت للنص، الكهرباء مش بتقل للنص، دي بتقل للربع!. دي
+                                    الثغرة اللي الـ Multi-core استغلها.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part C: Multi-core Calculation -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>3. Using the multi-core example, show mathematically how 2 cores at V/2 and F/2
+                                consume 1/4 the power while maintaining same performance (5 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Single Core:</strong> $P = C \times V^2 \times F = 1$ unit. Performance
+                                        = $F$.</li>
+                                    <li><strong>Dual Core (each at F/2, V/2):</strong>
+                                        <ul>
+                                            <li>Power per core: $P_{core} = C \times (V/2)^2 \times (F/2) = C \times
+                                                (V^2/4) \times (F/2) = \frac{1}{8} (CV^2F)$.</li>
+                                            <li>Total Power (2 cores): $2 \times \frac{1}{8} = \frac{1}{4}$ of original
+                                                power.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Performance:</strong> $2 \times (F/2) = F$ (Same total instructions per
+                                        second).</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>سحر الرياضيات (Multi-core Calc):</strong></p>
+                                <p>لو عندنا كور واحد شغال بسرعة كاملة، بيسحب طاقة كاملة.</p>
+                                <p>لو جبنا 2 كور، وشغلنا كل واحد بنص السرعة (يعني نص الفولت كمان):</p>
+                                <ul>
+                                    <li>الكهرباء للكور الواحد هتقل للـ 1/8 (عشان الفولت نزل للنص وتربع).</li>
+                                    <li>نضرب في 2 كور -> 2 × 1/8 = 1/4.</li>
+                                </ul>
+                                <p><strong>النتيجة:</strong> نفس الشغل خلص، بس استهلكنا ربع الكهرباء بس!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part D: Power Wall -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>4. What is the "power wall" and why did it stop frequency scaling? (2
+                                marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Power Wall:</strong> The limit where processors consume so much power
+                                        and generate so much heat that they cannot be cooled by conventional means
+                                        (air/liquid).</li>
+                                    <li>It stopped frequency scaling because increasing `F` (and thus requiring higher
+                                        `V`) would melt the chip.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>الحيطة السد (Power Wall):</strong></p>
+                                <p>وصلنا لمرحلة إن البروسيسور بقى بيطلع حرارة زي "سطح الشمس" أو "المفاعل النووي". لو
+                                    زودنا السرعة أي حاجة بسيطة، الشريحة هتتحرق. فكان لازم نوقف سباق السرعة ده.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: AMDAHL'S LAW -->
+        <div class="section section-amdahl">
+            <h2 class="section-header">Section 3: Amdahl's Law & Parallelization (25%)</h2>
+            <p class="section-description">
+                Understanding the fundamental limits of parallelization and how sequential bottlenecks limit speedup
+            </p>
+
+            <!-- Question 5 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 5</span>
+                    <span class="question-marks">12 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Amdahl's Law calculations and analysis.</strong></p>
+                    <div class="formula-box">
+                        <p style="font-size: 1.1em; margin-bottom: 10px;"><strong>Amdahl's Law:</strong></p>
+                        <div class="formula">Speedup = 1 / (f + (1-f)/N)</div>
+                    </div>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Statement -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. State Amdahl's Law and define all terms (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Amdahl's Law:</strong> Defines the maximum theoretical speedup of a
+                                        program using multiple processors.</li>
+                                    <li><strong>f (sequential fraction):</strong> The part of the code that CANNOT be
+                                        parallelized (must run on 1 core).</li>
+                                    <li><strong>N:</strong> Number of processors.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>قانون أمدال:</strong></p>
+                                <p>القانون اللي بيفكرنا بالواقع المر. بيقول: "سرعتك القصوى بيحددها الجزء السلحفاة اللي
+                                    في الكود اللي مينفعش يتقسم".</p>
+                                <ul>
+                                    <li><strong>f:</strong> نسبة الكود "السلحفاة" (Sequential).</li>
+                                    <li><strong>N:</strong> عدد "العمال" (Processors).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: Calculation -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. Calculate maximum speedup for a program where 20% is sequential on 4 cores (4
+                                marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <div class="formula-box">
+                                    <p>Speedup = 1 / (0.2 + (0.8 / 4))</p>
+                                    <p>= 1 / (0.2 + 0.2)</p>
+                                    <p>= 1 / 0.4</p>
+                                    <p>= <strong>2.5x</strong></p>
+                                </div>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>حسبة بسيطة:</strong></p>
+                                <p>لو عندك 20% كود "عطلان" (Sequential) ومعاك 4 عمال (Cores). السرعة هتزيد مرتين ونص بس
+                                    (2.5x)، مش 4 مرات زي ما انت متخيل.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part C: Infinite Cores -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>3. Calculate maximum theoretical speedup with infinite cores (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li>Limit as N approaches infinity: $(1-f)/N$ becomes 0.</li>
+                                    <li>Max Speedup = $1 / f = 1 / 0.2 = $ <strong>5x</strong>.</li>
+                                    <li>Even with a billion cores, you can never speed up more than 5x if 20% is
+                                        sequential.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>لو معانا كورز لا نهائية؟</strong></p>
+                                <p>مش هتفرق كتير. القانون بيقولك: $1/0.2 = 5$. يعني أخرك سرعة 5 أضعاف بس، حتى لو معاك
+                                    مليون كور. الـ 20% دول هما "عنق الزجاجة" الأبدي.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part D: 0.5% Example -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>4. Explain why even 0.5% sequential code limits speedup to 200× on 1000 cores (4
+                                marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li>With massive N (1000), the parallel time becomes negligible.</li>
+                                    <li>The execution time is dominated entirely by the sequential fraction ($f$).</li>
+                                    <li>Max Speedup = $1 / 0.005 = 200$.</li>
+                                    <li>So with 1000 cores, you only get 200x speedup. Efficiency drops to ~20%.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <p><strong>درس قاسي:</strong></p>
+                                <p>تخيل نص في المية بس (0.5%) هو اللي sequential. ده كفيل إنه يخليك تستفيد بـ 200 ضعف بس
+                                    من أصل 1000 كور!! يعني بترمي 80% من قوة جهازك في الأرض بسبب "فتافيت" كود مش معمولة
+                                    Parallel.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                <p>📚 HPC Exam - Parallel Extremes, ILP & Power Wall | Lecture 3-4</p>
+                <p>Core topics: Moore's Law, ILP limits, Power Wall equation, Multi-core motivation, Amdahl's Law
+                    calculations</p>
+                <p style="margin-top: 10px; font-size: 0.85em;">Focus on understanding WHY parallel computing became
+                    necessary (Term 1 foundation)</p>
+            </footer>
+        </div>
+</body>
+
+</html>

@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPC Exam: Flynn's Taxonomy & Parallel Machines</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #c084fc;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
+        }
+
+        header h2 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 10px;
+        }
+
+        /* Q&A Interleaved Layout */
+        .qa-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .qa-pair {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 30px;
+        }
+
+        .qa-pair:last-child {
+            border-bottom: none;
+        }
+
+        .qa-question {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .qa-answer-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .qa-answer-block {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .qa-english,
+        .qa-arabic {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+        }
+
+        .qa-english {
+            border-left: 3px solid var(--primary);
+        }
+
+        .qa-arabic {
+            direction: rtl;
+            font-family: 'Cairo', sans-serif;
+            border-right: 3px solid var(--success);
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        .label-eng,
+        .label-ar {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.7;
+        }
+
+        .label-eng {
+            color: var(--primary);
+        }
+
+        .label-ar {
+            color: var(--success);
+        }
+
+        /* General Question Container */
+        .question {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 35px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .question::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), transparent);
+            opacity: 0.8;
+            border-radius: 24px 24px 0 0;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .question-number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            font-size: 1.1rem;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            font-weight: 700;
+        }
+
+        .question-marks {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        /* Utilities */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #09090b !important;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+        }
+
+        .highlight {
+            color: var(--warning);
+            font-weight: bold;
+            background: rgba(251, 191, 36, 0.1);
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        /* Specific to Flynn's Taxonomy */
+        .taxonomy-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .taxonomy-box {
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .taxonomy-box:hover {
+            transform: translateY(-2px);
+        }
+
+        .taxonomy-sisd h4 {
+            color: #3b82f6;
+        }
+
+        .taxonomy-simd h4 {
+            color: #06b6d4;
+        }
+
+        .taxonomy-misd h4 {
+            color: #8b5cf6;
+        }
+
+        .taxonomy-mimd h4 {
+            color: #22c55e;
+        }
+
+        .section-header {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 12px;
+            border-left: 3px solid var(--secondary);
+        }
+
+        /* Exam Info Box */
+        .exam-info {
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .comparison-table th {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .comparison-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 80px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🖥️ High Performance Computing Exam</h1>
+            <h2>Lecture 1: Flynn's Taxonomy & Parallel Machines</h2>
+            <p style="margin-top: 15px; color: #64748b;">Foundations of Parallel Computing Architecture</p>
+        </header>
+
+        <div class="exam-info">
+            <h3>📋 Exam Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Total Questions:</strong>
+                    12 Questions
+                </div>
+                <div class="info-item">
+                    <strong>Total Marks:</strong>
+                    50 Marks
+                </div>
+                <div class="info-item">
+                    <strong>Time Allowed:</strong>
+                    75 Minutes
+                </div>
+                <div class="info-item">
+                    <strong>Format:</strong>
+                    Definitions, Comparisons, Explanations (NO MCQs)
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 1: FLYNN'S TAXONOMY -->
+        <div class="section section-flynn">
+            <h2 class="section-header">Section 1: Flynn's Taxonomy (40%)</h2>
+            <p class="section-description">
+                Understanding the four fundamental categories of computer architectures based on instruction and data
+                streams
+            </p>
+
+            <!-- Question 1 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 1</span>
+                    <span class="question-marks">10 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Define Flynn's Taxonomy and explain each of the four categories with their
+                            characteristics.</strong></p>
+
+                    <div class="taxonomy-grid">
+                        <div class="taxonomy-box taxonomy-sisd">
+                            <h4 style="color: #3b82f6;">SISD</h4>
+                            <p>Single Instruction, Single Data</p>
+                        </div>
+                        <div class="taxonomy-box taxonomy-simd">
+                            <h4 style="color: #06b6d4;">SIMD</h4>
+                            <p>Single Instruction, Multiple Data</p>
+                        </div>
+                        <div class="taxonomy-box taxonomy-misd">
+                            <h4 style="color: #8b5cf6;">MISD</h4>
+                            <p>Multiple Instruction, Single Data</p>
+                        </div>
+                        <div class="taxonomy-box taxonomy-mimd">
+                            <h4 style="color: #22c55e;">MIMD</h4>
+                            <p>Multiple Instruction, Multiple Data</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Flynn's Taxonomy Definition -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>Part A - What is Flynn's Taxonomy? (2 marks)</strong><br>
+                            Define the taxonomy and what it classifies.
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <p>Flynn's Taxonomy is a classification system for computer architectures based on two
+                                    dimensions:</p>
+                                <ul>
+                                    <li><strong>Number of instruction streams:</strong> Single or Multiple</li>
+                                    <li><strong>Number of data streams:</strong> Single or Multiple</li>
+                                </ul>
+                                <p>It creates four fundamental categories to compare parallel architectures.</p>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p>ده نظام تصنيف عمله "مايكل فلين" عشان يقسم الكمبيوترات لنوعين أساسيين:</p>
+                                <ol>
+                                    <li><strong>سيل التعليمات (Instructions):</strong> هل بنفذ أمر واحد ولا كذا أمر؟
+                                    </li>
+                                    <li><strong>سيل البيانات (Data):</strong> هل شغالين على معلومة واحدة ولا داتا كتير؟
+                                    </li>
+                                </ol>
+                                <p>وعلى الأساس ده بيطلعلنا 4 أنواع من المعالجات (SISD, SIMD, MISD, MIMD).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: SISD -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>Part B - SISD: Single Instruction, Single Data (2 marks)</strong><br>
+                            Define with characteristics and example.
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Definition:</strong> Single processor executing a single instruction
+                                        stream on a single data stream.</li>
+                                    <li><strong>Characteristics:</strong>
+                                        <ul>
+                                            <li>One instruction at a time.</li>
+                                            <li>Sequential execution (Von Neumann).</li>
+                                            <li>No parallelism.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Example:</strong> Traditional <span class="highlight">uniprocessor
+                                            systems</span> (classic single-core CPUs).</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>SISD (أمر واحد، داتا واحدة):</strong></p>
+                                <p>ده الكمبيوتر التقليدي القديم "الغلابة". فيه معالج واحد (Core واحد) بينفذ أمر واحد على
+                                    معلومة واحدة بالترتيب.</p>
+                                <p><strong>مثال:</strong> البروسيسورات القديمة زي الـ Pentium 4 قبل عصر الـ Multi-core.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part C: SIMD -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>Part C - SIMD: Single Instruction, Multiple Data (2 marks)</strong><br>
+                            Define with characteristics and example.
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Definition:</strong> Single instruction controls multiple processing
+                                        elements executing on different data simultaneously.</li>
+                                    <li><strong>Characteristics:</strong>
+                                        <ul>
+                                            <li>Synchronous execution (lockstep).</li>
+                                            <li>Efficient for data-parallel tasks (e.g., graphics, arrays).</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Examples:</strong> <span class="highlight">Vector processors</span>,
+                                        GPUs, CPU extensions (SSE/AVX).</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>SIMD (أمر واحد، داتا كتير):</strong></p>
+                                <p>زي "قائد فرقة موسيقية" واحد (Control Unit) بيدي إشارة، وكل العازفين (Processors)
+                                    بينفذوها في نفس الوقت بس كل واحد على آلته (Data).</p>
+                                <p><strong>مثال:</strong> كروت الشاشة (GPUs) لما بتعدل ألوان صورة، بتطبق نفس الفلتر على
+                                    ملايين البيكسلات في نفس اللحظة.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part D: MISD -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>Part D - MISD: Multiple Instruction, Single Data (2 marks)</strong><br>
+                            Define, characteristics, and practical relevance.
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Definition:</strong> Multiple processors execute different instructions
+                                        on the same data stream.</li>
+                                    <li><strong>Status:</strong> <span class="highlight">Not useful in most
+                                            applications</span>.</li>
+                                    <li><strong>Relevance:</strong> Considered more of an "intellectual exercise". None
+                                        valid commercially.</li>
+                                    <li><strong>Rare Use:</strong> Fault-tolerant systems (Space Shuttle computers)
+                                        checking each other.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>MISD (أوامر كتير، داتا واحدة):</strong></p>
+                                <p>ده نوع "نظري" أكتر. تخيل كذا دكتور (Processors) بيشخصوا نفس المريض (Data) في نفس
+                                    الوقت بطرق مختلفة.</p>
+                                <p>مش موجود في السوق، بس بيستخدموه في حاجات نادرة زي أنظمة الطيارات عشان الأمان (لو واحد
+                                    غلط التاني يصححله).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part E: MIMD -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>Part E - MIMD: Multiple Instruction, Multiple Data (2 marks)</strong><br>
+                            Define with characteristics and example.
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Definition:</strong> Independent processors execute different
+                                        instructions on different data asynchronously.</li>
+                                    <li><strong>Characteristics:</strong>
+                                        <ul>
+                                            <li>Most flexible architecture.</li>
+                                            <li>Processors work independently.</li>
+                                            <li><span class="highlight">Suited for any kind of application</span>.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Examples:</strong> Modern Multi-core CPUs (i7, Ryzen), Clusters,
+                                        Supercomputers.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>MIMD (أوامر كتير، داتا كتير):</strong></p>
+                                <p><strong>"الكل في الكل"</strong>. دي الأجهزة الحديثة اللي معانا. كل نواة (Core) شغالة
+                                    بمزاجها، بتشغل برنامج مختلف وداتا مختلفة.</p>
+                                <p><strong>مثال:</strong> اللابتوب بتاعك، ممكن تكون بتشغل فيديو (Core 1) وبتكتب كود
+                                    (Core 2) في نفس الوقت.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 2</span>
+                    <span class="question-marks">6 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>State whether each of the following statements is TRUE or FALSE and provide detailed
+                            explanations:</strong></p>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Statement 1 -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. "SIMD architectures execute the same instruction on multiple data values, as seen
+                                in vector processors." (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <p><span class="highlight" style="color: #4ade80;">TRUE</span></p>
+                                <p><strong>Explanation:</strong> SIMD (Single Instruction, Multiple Data) explicitly
+                                    means one instruction controls multiple processing elements executing on different
+                                    data simultaneously. Vector processors (like Cray) are classic examples.</p>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>صح طبعاً.</strong></p>
+                                <p>في الـ SIMD، هو أمر واحد بيتحكم في كله. زي "المايسترو" اللي بيدي إشارة واحدة وكل
+                                    الفرقة بتعزف (داتا كتير). وده هو بالظبط اللي بتعمله الـ Vector Processors القديمة أو
+                                    كروت الشاشة (GPUs) دلوقتي.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statement 2 -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. "MISD architectures are widely used in commercial computing and represent a
+                                significant portion of parallel machines today." (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <p><span class="highlight" style="color: #f87171;">FALSE</span></p>
+                                <p><strong>Explanation:</strong> MISD machines are <span class="highlight">not useful in
+                                        most applications</span> and none are available commercially. They are
+                                    considered an "intellectual exercise" rather than a practical configuration.</p>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>غلط.</strong></p>
+                                <p>الـ MISD ده زي ما قلنا بتاع "المعمل/الأبحاث". ملوش وجود تجاري حقيقي نبيعه ونشتريه.
+                                    الأجهزة اللي بنستخدمها يا SISD (لابتوب قديم) يا MIMD (لابتوب جديد) يا SIMD (كروت
+                                    شاشة). الـ MISD ده حالة نادرة جداً.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statement 3 -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>3. "MIMD represents today's parallel architectures and can handle any kind of
+                                application." (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <p><span class="highlight" style="color: #4ade80;">TRUE</span></p>
+                                <p><strong>Explanation:</strong> MIMD is the most flexible architecture where processors
+                                    work asynchronously on different data. It represents modern multi-core CPUs,
+                                    clusters, and supercomputers, capable of handling any application type.</p>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>صح جداً.</strong></p>
+                                <p>الـ MIMD هو "الجوكر". يقدر يعمل أي حاجة ولأي برنامج، عشان كل بروسيسور حر في تصرفاته
+                                    (Asynchronous). ده النظام المسيطر دلوقتي في كل حاجة من موبايلك لحد السوبر كمبيوتر.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 3</span>
+                    <span class="question-marks">4 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Classify the following computer systems according to Flynn's Taxonomy and justify your
+                            classification:</strong></p>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Pentium 4 -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. A traditional single-core Intel Pentium 4 processor (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <p><strong>Classification:</strong> <span class="highlight">SISD (Single Instruction,
+                                        Single Data)</span></p>
+                                <p><strong>Justification:</strong></p>
+                                <ul>
+                                    <li>Single processing core.</li>
+                                    <li>Executes one instruction stream sequentially.</li>
+                                    <li>Operates on one data item at a time.</li>
+                                    <li>Represents classic Von Neumann architecture.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>الاجابة: SISD</strong></p>
+                                <p>الـ Pentium 4 ده كان "آخر العنقود" في عصر الـ Core الواحد. هو موظف واحد (Processor)
+                                    بيعمل مهمة واحدة (Instruction) على ورقة واحدة (Data) في المرة.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: Core i7 -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. A modern Intel Core i7 quad-core processor (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <p><strong>Classification:</strong> <span class="highlight">MIMD (Multiple Instruction,
+                                        Multiple Data)</span></p>
+                                <p><strong>Justification:</strong></p>
+                                <ul>
+                                    <li>Has 4 independent cores.</li>
+                                    <li>Each core can execute different instructions.</li>
+                                    <li>Each core can operate on different data asynchronously.</li>
+                                    <li>Example of today's dominant parallel architecture.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>الاجابة: MIMD</strong></p>
+                                <p>الـ Core i7 فيه 4 "موظفين" (Cores). كل واحد فيهم يقدر يمسك شغلانة مختلفة
+                                    (Instruction) ويشتغل على ملفات مختلفة (Data) في نفس الوقت من غير ما يعطلوا بعض.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SECTION 2: PARALLEL MACHINES (SMP vs MPP) -->
+        <div class="section section-parallel">
+            <h2 class="section-header">Section 2: Parallel Machines - SMP vs MPP (35%)</h2>
+            <p class="section-description">
+                Understanding the key differences between Symmetric Multiprocessors and Massively Parallel Processors
+            </p>
+
+            <!-- Question 4 -->
+            <!-- Question 4 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 4</span>
+                    <span class="question-marks">12 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain the difference between SMP (Symmetric Multiprocessors) and MPP (Massively
+                            Parallel Processors).</strong></p>
+
+                    <p><strong>Summary Comparison:</strong></p>
+                    <table class="comparison-table">
+                        <tr>
+                            <th>Feature</th>
+                            <th>SMP (Symmetric Multiprocessors)</th>
+                            <th>MPP (Massively Parallel Processors)</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Memory</strong></td>
+                            <td>Shared Memory (Global)</td>
+                            <td>Distributed Memory (Private)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Communication</strong></td>
+                            <td>Via Memory (Read/Write)</td>
+                            <td>Via Network (Message Passing)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OS</strong></td>
+                            <td>One OS controls all</td>
+                            <td>Each processor runs its own OS</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Definitions -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. Definitions (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>SMP:</strong> A system where multiple processors share a single, common
+                                        memory and are controlled by a single Operating System.</li>
+                                    <li><strong>MPP:</strong> A scalable system with many processors, where each has its
+                                        own private memory and runs its own copy of the OS.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>SMP (البيت العيلة):</strong></p>
+                                <p>كل البروسيسورات عايشة في بيت واحد وبتاكل من طبق واحد (Shared Memory). كلهم شايفين نفس
+                                    الداتا، ونظام تشغيل واحد (OS) بيمشيهم.</p>
+                                <p><strong>MPP (الكومباوند):</strong></p>
+                                <p>كل بروسيسور عايش في شقته لوحده وعنده تلاجته الخاصة (Private Memory). محدش شايف حاجة
+                                    التاني، ولو عايزين يكلموا بعض بيبعتوا رسايل (Message Passing).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: Memory Organization -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. Memory Organization (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>SMP:</strong> Uses <strong>Shared Memory</strong>. Any processor can
+                                        access any memory address (Uniform Memory Access or UMA).</li>
+                                    <li><strong>MPP:</strong> Uses <strong>Distributed Memory</strong>. Each processor
+                                        accesses only its local memory directly. Accessing remote memory requires
+                                        network communication.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>تنظيم الذاكرة:</strong></p>
+                                <p><strong>في الـ SMP:</strong> الذاكرة "مشاع". أي بروسيسور يقدر يقرأ أي عنوان في
+                                    الذاكرة في نفس الوقت.</p>
+                                <p><strong>في الـ MPP:</strong> "كل واحد في حاله". البروسيسور بيشوف بس الذاكرة اللي معاه
+                                    في نفس الـ Node. لو عايز داتا من نود تانية، لازم يطلبها كأنها "Download".</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part C: Communication Mechanisms -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>3. Communication Mechanisms (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>SMP:</strong> Processors communicate by reading/writing to shared
+                                        variables in memory.</li>
+                                    <li><strong>MPP:</strong> Processors communicate by sending messages over an
+                                        interconnection network (Message Passing Interface - MPI).</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>إزاي بيتكلموا؟</strong></p>
+                                <p><strong>SMP:</strong> يكتبوا لبعض في ورقة مشتركة (Memory Variables).</p>
+                                <p><strong>MPP:</strong> يبعتوا "جوابات" لبعض عبر الشبكة (Messages).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part D: Distinction -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>4. "Easy Way to Distinguish" (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <p><strong>The fundamental difference:</strong></p>
+                                <ul>
+                                    <li><strong>SMP:</strong> Share the same memory address space.</li>
+                                    <li><strong>MPP:</strong> Do NOT share memory; they are separate matching connected
+                                        via network.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>الخلاصة (الزتونة):</strong></p>
+                                <p>بص على "الميموري":</p>
+                                <ul>
+                                    <li>لو "حلة واحدة" بياكلوا منها سوا ← <strong>SMP</strong>.</li>
+                                    <li>لو "كل واحد طبقه لوحده" ← <strong>MPP</strong>.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 5 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 5</span>
+                    <span class="question-marks">5 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain the concept of Clusters in parallel computing based on the lecture
+                            slides.</strong></p>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Definition -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. Define what a cluster is (2 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Definition:</strong> A cluster is a collection of interconnected <span
+                                            class="highlight">stand-alone</span> computers that cooperatively work
+                                        together as a single, integrated computing resource.</li>
+                                    <li>They are typically built using commodity hardware (standard PCs) to provide high
+                                        performance at a lower cost.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>تعريف الـ Cluster (الشلة):</strong></p>
+                                <p>بدل ما نشتري سوبر كمبيوتر بمليون دولار، بنجيب 50 جهاز كمبيوتر عادي (زي اللي في البيت)
+                                    ونوصلهم ببعض بشبكة سريعة، ونخليهم يشتغلوا كأنهم "جهاز واحد قوي جداً".</p>
+                                <p>ده اسمه Cluster: "اتحاد قوة" لأجهزة مستقلة.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: Components -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. Describe the typical components of a cluster (Service Node vs Computing Nodes) (2
+                                marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <p><strong>Service Node (Front Node):</strong></p>
+                                <ul>
+                                    <li>The "Gateway" machine.</li>
+                                    <li>Handles user interaction (login, job submission).</li>
+                                    <li>Equipped with I/O devices (Keyboard, Monitor, Mouse).</li>
+                                    <li>Manages the cluster and connects to outside networks.</li>
+                                </ul>
+                                <p><strong>Computing Nodes:</strong></p>
+                                <ul>
+                                    <li>Dedicated to "number crunching" (Processing).</li>
+                                    <li><strong>Separated</strong> from outside networks.</li>
+                                    <li>Typically <strong>Headless</strong> (No keyboard, mouse, or monitor) to maximize
+                                        computing density.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>مكونات الـ Cluster:</strong></p>
+                                <ol>
+                                    <li><strong>الريسة (Service Node):</strong> ده الجهاز "الواجهة". هو اللي عليه الشاشة
+                                        والكيبورد، وهو اللي بتكلمه عشان تدي الأوامر وتستلم النتائج. هو "مدير الموقع".
+                                    </li>
+                                    <li><strong>العمال (Computing Nodes):</strong> دول "الجنود المجهولة". أجهزة كتير
+                                        جداً (ممكن آلاف) محبوسين جوة، معليهمش شاشات ولا ماوس، وظيفتهم الوحيدة "الحساب"
+                                        (Computing) ليل نهار. وممنوع يتصلوا بالنت الخارجي، بيتكلموا بس مع المدير ومع
+                                        بعض.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part C: Interconnection -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>3. Explain the interconnection and communication in clusters (1 mark)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Platform:</strong> Communications occur on an "interconnect network
+                                        platform" (e.g., Ethernet, Myrinet).</li>
+                                    <li><strong>Role:</strong> High-speed internal network connecting all nodes to
+                                        enable message passing and data synchronization.</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>التوصيل (Interconnection):</strong></p>
+                                <p>الأجهزة دي مربوطة ببعض بشبكة داخلية سريعة جداً (زي كابلات الـ Ethernet بس أسرع).
+                                    الشبكة دي هي "عصب" الكلاستر، اللي بتنقل الرسايل والداتا بين "العمال" عشان ينسقوا
+                                    الشغل بينهم.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SECTION 3: HPC CONCEPTS & AMDAHL'S LAW -->
+        <div class="section section-concepts">
+            <h2 class="section-header">Section 3: HPC Concepts & Amdahl's Law (25%)</h2>
+            <p class="section-description">
+                Understanding fundamental concepts of parallel computing and its theoretical limits
+            </p>
+
+            <!-- Question 6 -->
+            <!-- Question 6 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 6</span>
+                    <span class="question-marks">6 marks</span>
+                </div>
+                <div class="question-content">
+                    <p><strong>Explain the difference between Data Parallel and Task Parallel programming
+                            models.</strong>
+                    </p>
+
+                    <table class="comparison-table">
+                        <tr>
+                            <th>Feature</th>
+                            <th>Data Parallel</th>
+                            <th>Task Parallel</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Concept</strong></td>
+                            <td>Same task, split data</td>
+                            <td>Different tasks</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Example</strong></td>
+                            <td>Image Processing</td>
+                            <td>Web Server / Pipelines</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="qa-container">
+                    <!-- Part A: Data Parallelism -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>1. Define Data Parallelism with an example (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Definition:</strong> Each processor performs the <span
+                                            class="highlight">same task</span> on different pieces of distributed data.
+                                    </li>
+                                    <li><strong>Characteristics:</strong> Synchronous execution, partitioned data,
+                                        single
+                                        instruction sequence.</li>
+                                    <li><strong>Example:</strong> Array Processing (Splitting an array of 100 elements:
+                                        CPU
+                                        A does 1-50, CPU B does 51-100).</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>Data Parallelism (تقسيم التورتة):</strong></p>
+                                <p>معانا داتا كبيرة (Array مثلاً) بنقسمها حتت، وكل بروسيسور ياخد حتة يشتغل عليها
+                                    <strong>بنفس الكود</strong>.
+                                </p>
+                                <p><strong>مثال:</strong> زي لما تقسم تنضيف البيت على 3 تنفار، كل واحد يمسك أوضة ينضفها
+                                    (نفس
+                                    الشغلانة) بس في مكان مختلف (داتا مختلفة).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Part B: Task Parallelism -->
+                    <div class="qa-pair">
+                        <div class="qa-question">
+                            <strong>2. Define Task Parallelism with an example (3 marks)</strong>
+                        </div>
+                        <div class="qa-answer-block">
+                            <div class="qa-english">
+                                <div class="label-eng">Answer</div>
+                                <ul>
+                                    <li><strong>Definition:</strong> Each processor performs a <span
+                                            class="highlight">different task</span>. Tasks are functionally decomposed.
+                                    </li>
+                                    <li><strong>Characteristics:</strong> Asynchronous execution, different
+                                        operations/code
+                                        on each processor.</li>
+                                    <li><strong>Example:</strong> Signal Processing Pipeline (CPU A: Normalizes data ->
+                                        CPU
+                                        B: Performs FFT -> CPU C: Multiplies).</li>
+                                </ul>
+                            </div>
+                            <div class="qa-arabic">
+                                <div class="label-ar">شرح مبسط بالمصري</div>
+                                <p><strong>Task Parallelism (تقسيم الشغل):</strong></p>
+                                <p>كل بروسيسور بيعمل <strong>وظيفة مختلفة تماماً</strong>. بنقسم البرنامج لوظايف مش
+                                    لداتا.
+                                </p>
+                                <p><strong>مثال:</strong> خط الانتاج في المصنع: واحد بيجمع، واحد بيدهن، واحد بيغلف. كل
+                                    واحد
+                                    بيعمل Task مختلف وبيسلم للي بعده (Pipeline).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 7 -->
+        <div class="question">
+            <div class="question-header">
+                <span class="question-number">Question 7</span>
+                <span class="question-marks">7 marks</span>
+            </div>
+            <div class="question-content">
+                <p><strong>Explain Amdahl's Law and its implications for parallel computing.</strong></p>
+
+                <div class="formula-box">
+                    <div class="formula">S = 1 / (f_s + f_p/N)</div>
+                </div>
+            </div>
+
+            <div class="qa-container">
+                <!-- Part A: Statement -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <strong>1. State Amdahl's Law and explain what it predicts (2 marks)</strong>
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">Answer</div>
+                            <p><strong>Statement:</strong> Amdahl's Law places a strict theoretical limit on the speedup
+                                that can be realized by using multiple processors.</p>
+                            <p><strong>Prediction:</strong> It predicts that the maximum speedup is fundamentally
+                                limited by
+                                the serial fraction of the code, regardless of how many processors are added.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar">شرح مبسط بالمصري</div>
+                            <p><strong>قانون أمدال:</strong></p>
+                            <p>القانون ده "الصدمة" لكل واحد فاكر إنه لو جاب 1000 بروسيسور البرنامج هيطير. القانون
+                                بيقولك:
+                                "لو عندك حتة صغيرة في الكود لازم تمشي بالترتيب (Serial)، الحتة دي هتكتف سرعة الجهاز كله
+                                وهتحدد سقف للسرعة مهما زودت بروسيسورات".</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B: Formula Terms -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <strong>2. Define the terms in Amdahl's Law formula (2 marks)</strong>
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">Answer</div>
+                            <ul>
+                                <li><strong>S (Speedup):</strong> How much faster the parallel version runs compared to
+                                    serial.</li>
+                                <li><strong>f_s (Serial Fraction):</strong> The percentage of code that cannot be
+                                    parallelized.</li>
+                                <li><strong>f_p (Parallel Fraction):</strong> The percentage of code that can be
+                                    parallelized (f_p = 1 - f_s).</li>
+                                <li><strong>N:</strong> Number of processors.</li>
+                            </ul>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar">شرح مبسط بالمصري</div>
+                            <p><strong>رموز المعادلة:</strong></p>
+                            <p><strong>S:</strong> السرعة اللي كسبناها.</p>
+                            <p><strong>f_s:</strong> الجزء "الممل" اللي لازم يتعمل خطوة خطوة (Serial).</p>
+                            <p><strong>f_p:</strong> الجزء "الذكي" اللي نقدر نقسمه على البروسيسورات.</p>
+                            <p><strong>N:</strong> عدد "العمال" أو البروسيسورات اللي شغالين.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part C: Implications -->
+                <div class="qa-pair">
+                    <div class="qa-question">
+                        <strong>3. Explain why "it takes only a small fraction of serial content to degrade parallel
+                            performance" (3 marks)</strong>
+                    </div>
+                    <div class="qa-answer-block">
+                        <div class="qa-english">
+                            <div class="label-eng">Answer</div>
+                            <p>Even a very small serial fraction (e.g., 1%) creates a bottleneck because all processors
+                                must
+                                wait for the serial part to complete. As N approaches infinity, the term f_p/N becomes
+                                zero,
+                                and the maximum speedup becomes 1/f_s. So, 1% serial limits speedup to max 100x, even
+                                with
+                                millions of processors.</p>
+                        </div>
+                        <div class="qa-arabic">
+                            <div class="label-ar">شرح مبسط بالمصري</div>
+                            <p><strong>ليه 1% تفرق؟</strong></p>
+                            <p>تخيل طريق سريع جداً 100 حارة (Parallel)، بس فيه "كمين" (Serial) بيسرب عربية واحدة بس.
+                                الطريق
+                                كله هيقف والسرعة هتبقى بطيئة جداً بسبب الكمين ده. نفس الكلام، الجزء الـ Serial بيخلي كل
+                                البروسيسورات تستنى تخلص، فبيضيع فايدة التوازي.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <footer>
+        <p>📚 HPC Exam - Flynn's Taxonomy & Parallel Machines | Lecture 1</p>
+        <p>Master the fundamentals: SISD, SIMD, MISD, MIMD, SMP, MPP, Clusters, and Amdahl's Law</p>
+        <p style="margin-top: 10px; font-size: 0.85em;">Generated based on lecture slides - All answers reference
+            specific content</p>
+    </footer>
+    </div>
+
+
+</body>
+
+</html>

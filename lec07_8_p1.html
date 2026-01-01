@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPC Exam: CUDA Programming Model - Thread Hierarchy & Synchronization</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --bg-card: rgba(15, 23, 42, 0.6);
+            --glass-border: rgba(148, 163, 184, 0.1);
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #f472b6;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #f87171;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #000000);
+            background-attachment: fixed;
+            color: var(--text-main);
+            line-height: 1.7;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Glassmorphism Classes */
+        .glass {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.0) 100%);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 50px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 150%;
+            background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.2), transparent 70%);
+            z-index: -1;
+            filter: blur(40px);
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
+        }
+
+        header h2 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 10px;
+        }
+
+        .exam-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .exam-info h3 {
+            display: none;
+        }
+
+        /* We will hide the old header inside */
+        .info-grid {
+            display: contents;
+        }
+
+        /* Unwrap the grid */
+
+        .info-item {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .info-item:hover {
+            transform: translateY(-5px) scale(1.02);
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 10px 30px -10px rgba(56, 189, 248, 0.15);
+        }
+
+        .info-item strong {
+            display: block;
+            color: var(--primary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        /* Section Styling */
+        .section {
+            position: relative;
+            padding: 30px 0;
+            margin-bottom: 60px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+
+        .section-header {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid;
+            border-image: linear-gradient(to right, currentColor, transparent) 1;
+        }
+
+        .section-threads .section-header {
+            color: var(--primary);
+        }
+
+        .section-sync .section-header {
+            color: var(--secondary);
+        }
+
+        .section-practical .section-header {
+            color: var(--success);
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-left: 4px solid currentColor;
+            border-radius: 0 12px 12px 0;
+        }
+
+        /* Question Styling */
+        .question {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 35px;
+            margin-bottom: 40px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .question::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), transparent);
+            opacity: 0.8;
+        }
+
+        .question:hover {
+            transform: translateY(-4px);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .question-number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            font-size: 1.1rem;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            font-weight: 700;
+        }
+
+        .question-marks {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .question-content {
+            font-size: 1.15rem;
+            color: #e2e8f0;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .question-parts {
+            margin-top: 20px;
+        }
+
+        .question-parts li {
+            margin-bottom: 15px;
+            padding-left: 10px;
+            color: #cbd5e1;
+            list-style-position: inside;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #09090b;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #27272a;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            margin: 25px 0;
+            overflow-x: auto;
+            position: relative;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .code-keyword {
+            color: #c084fc;
+            font-weight: 700;
+        }
+
+        .code-comment {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .code-line {
+            color: #e2e8f0;
+            min-height: 24px;
+        }
+
+        /* Diagrams */
+        .diagram-container {
+            background: rgba(15, 23, 42, 0.5);
+            border: 2px dashed rgba(56, 189, 248, 0.2);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .diagram-placeholder {
+            color: #94a3b8;
+        }
+
+        .diagram-caption {
+            color: var(--primary);
+            margin-top: 15px;
+        }
+
+        /* New QA Structure for Interleaved Answers */
+        .qa-container {
+            margin-top: 20px;
+        }
+
+        .qa-pair {
+            margin-bottom: 25px;
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .qa-question {
+            padding: 15px 20px;
+            font-size: 1.05rem;
+            color: #fff;
+            background: rgba(56, 189, 248, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+        }
+
+        .qa-answer-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* English | Arabic */
+            gap: 0;
+        }
+
+        .qa-english {
+            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(2, 6, 23, 0.2);
+        }
+
+        .qa-arabic {
+            padding: 20px;
+            direction: rtl;
+            text-align: right;
+            font-family: 'Cairo', sans-serif;
+            background: rgba(30, 41, 59, 0.2);
+        }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .qa-answer-block {
+                grid-template-columns: 1fr;
+            }
+
+            .qa-english {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+        }
+
+        .label-eng {
+            color: var(--primary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .label-ar {
+            color: var(--success);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Bilingual Grid System */
+        .bilingual-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+            width: 100%;
+        }
+
+        .english-col {
+            direction: ltr;
+            text-align: left;
+        }
+
+        .arabic-col {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Cairo', sans-serif;
+            border-right: 3px solid rgba(56, 189, 248, 0.2);
+            padding-right: 25px;
+        }
+
+        /* Mobile Responsiveness for Grid */
+        @media (max-width: 900px) {
+            .bilingual-grid {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+
+            .arabic-col {
+                border-right: none;
+                border-top: 3px solid rgba(56, 189, 248, 0.2);
+                padding-right: 0;
+                padding-top: 25px;
+            }
+        }
+
+        /* Arabic Styles Refined */
+        .arabic-text,
+        .question-explanation,
+        .egyptian-explanation {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        .question-explanation {
+            background: linear-gradient(to right, rgba(129, 140, 248, 0.05), rgba(129, 140, 248, 0.1));
+            border-right: 4px solid var(--secondary);
+            padding: 20px;
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 1.1rem;
+            margin-top: 0;
+            /* Removing top margin as it fits in grid */
+            height: 100%;
+            /* Fill column height if side-by-side */
+        }
+
+        .question-explanation strong {
+            color: var(--secondary);
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            opacity: 1;
+            font-weight: 700;
+        }
+
+        .egyptian-explanation {
+            background: linear-gradient(to right, rgba(34, 197, 94, 0.05), rgba(34, 197, 94, 0.1));
+            border-right: 4px solid var(--success);
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 0;
+            color: #f1f5f9;
+            font-size: 1.15rem;
+            height: 100%;
+        }
+
+        .egyptian-explanation h4 {
+            color: var(--success);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        /* Ensure Code Blocks in Arabic Column stay LTR */
+        .arabic-col .code-block,
+        .question-explanation .code-block,
+        .egyptian-explanation .code-block {
+            direction: ltr;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+
+
+        .highlight {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+
+        .warning-box {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #fca5a5;
+        }
+
+        .hierarchy-visual {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hierarchy-level {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 0;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 60px;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2.2rem;
+            }
+
+            .section-header {
+                font-size: 1.5rem;
+            }
+
+            .question {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 High Performance Computing Exam</h1>
+            <h2>Lecture 7-8 Part 1: CUDA Programming Model</h2>
+            <p style="margin-top: 15px; color: #64748b;">Thread Hierarchy, Blocks & Synchronization</p>
+        </header>
+
+        <div class="exam-info">
+            <h3>📋 Exam Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Total Questions:</strong>
+                    15 Questions
+                </div>
+                <div class="info-item">
+                    <strong>Total Marks:</strong>
+                    45 Marks
+                </div>
+                <div class="info-item">
+                    <strong>Time Allowed:</strong>
+                    75 Minutes
+                </div>
+                <div class="info-item">
+                    <strong>Format:</strong>
+                    Descriptive & Code Analysis (NO MCQs)
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 1: CUDA THREAD MODEL -->
+        <div class="section section-threads">
+            <h2 class="section-header">Section 1: CUDA Thread Model (40%)</h2>
+            <p class="section-description">
+                Understanding CUDA's thread hierarchy, thread identification, and organization patterns
+            </p>
+
+            <!-- Question 1 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 1</span>
+                    <span class="question-marks">10 marks</span>
+                </div>
+                <div class="question-content">
+                    <p class="section-description" style="margin-bottom: 20px; color: #cbd5e1; font-size: 1.1rem;">
+                        <strong>Explain the CUDA thread hierarchy using the concepts presented in the lecture
+                            slides.</strong> Specifically describe these three levels:
+                    </p>
+
+                    <div class="qa-container">
+                        <!-- Part 1: Thread -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                1. <strong>Thread:</strong> What is it and what does it have its own of? <strong>(2
+                                    marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>A <strong>Thread</strong> is the smallest individual execution unit. Each thread
+                                        has its own:</p>
+                                    <ul>
+                                        <li>Unique Thread ID (<span class="highlight">threadIdx</span>)</li>
+                                        <li>Per-thread local memory and registers</li>
+                                        <li>Instruction pointer and program counter</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>4. THREAD (الشقة/العامل):</strong> ده أصغر حاجة. هو اللي بينفذ الشغل
+                                        بإيده. كل واحد ليه عنوانه المميز (Coordinates) عشان يعرف هو مين ومطلوب منه إيه.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 2: Block -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                2. <strong>Block:</strong> What is it, how do threads inside it communicate, and what is
+                                the limit? <strong>(2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>A <strong>Block</strong> is a batch of threads that can cooperate with each other
+                                        through:</p>
+                                    <ul>
+                                        <li>Synchronization using <code>__syncthreads()</code></li>
+                                        <li>Efficiently sharing data through low-latency shared memory</li>
+                                    </ul>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>3. BLOCK (العمارة الواحدة):</strong> دي العمارة، فيها مجموعة شقق
+                                        (Threads). الناس اللي في نفس العمارة يقدروا يخبطوا على بعض (Synchronization)
+                                        ويستلفوا حاجات من بعض بسرعة (Shared Memory).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 3: Grid -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                3. <strong>Grid:</strong> What is it and how do blocks inside it relate? <strong>(1
+                                    mark)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>A <strong>Grid</strong> is a collection of thread blocks created when a kernel is
+                                        launched. All threads in a grid execute the same kernel code and share global
+                                        memory.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>2. GRID (الموقع كله):</strong> ده المشروع كله، شايل جواه كل العمارات
+                                        (Blocks). هو التجميعه الكبيرة اللي بتطلع لما بنشغل الـ Kernel.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Context: Kernel -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Context: Kernel</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>A <strong>Kernel</strong> is a function executed on the GPU device that runs in
+                                        parallel across many threads. It is declared with the <span
+                                            class="highlight">__global__</span> keyword.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>1. KERNEL (المقاول الكبير):</strong> ده الكود الأساسي اللي بيدي الأوامر
+                                        لكل العمال عشان يشتغلوا مع بعض في نفس الوقت. هو دالة (Function) بتشتغل على كارت
+                                        الشاشة (GPU).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Context: Hierarchy -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                <strong>Why this Hierarchy?</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>This hierarchical organization provides <strong>Scalability</strong>, Memory
+                                        efficiency, and Synchronization control.</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>ليه التعب ده؟</strong> عشان النظام ده بيخلينا نشغل ملايين العمال مع بعض
+                                        بنظام، ونقدر نكبر المشروع أو نصغره براحتنا (Scalability).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="hierarchy-visual" style="margin-top: 30px;">
+                        <div class="hierarchy-level hierarchy-kernel">
+                            <strong>KERNEL</strong> - Executed on Device (GPU)
+                        </div>
+                        <div class="hierarchy-level hierarchy-grid">
+                            <strong>GRID</strong> - Collection of Thread Blocks
+                        </div>
+                        <div class="hierarchy-level hierarchy-block">
+                            <strong>BLOCK</strong> - Batch of Threads that can cooperate
+                        </div>
+                        <div class="hierarchy-level hierarchy-thread">
+                            <strong>THREAD</strong> - Individual execution unit
+                        </div>
+                    </div>
+
+                    <div class="answer-reference" style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                        📎 Reference: Lecture 7-8 Part 1, Slides on "Thread Batching: Grids and Blocks" and "CUDA
+                        Programming Model"
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="question">
+                <div class="question-header">
+                    <span class="question-number">Question 2</span>
+                    <span class="question-marks">8 marks</span>
+                </div>
+                <div class="question-content">
+                    <p class="section-description" style="margin-bottom: 20px; color: #cbd5e1; font-size: 1.1rem;">
+                        <strong>Analyze the following CUDA kernel launch configuration:</strong>
+                    </p>
+                    <div class="code-block">
+                        <div class="code-line"><span class="code-keyword">__global__</span> <span
+                                class="code-keyword">void</span> myKernel(<span class="code-keyword">float</span> *A,
+                            <span class="code-keyword">float</span> *B, <span class="code-keyword">float</span> *C) {
+                        </div>
+                        <div class="code-line"> <span class="code-keyword">int</span> i = blockIdx.x * blockDim.x +
+                            threadIdx.x;</div>
+                        <div class="code-line"> C[i] = A[i] + B[i];</div>
+                        <div class="code-line">}</div>
+                        <div class="code-line"></div>
+                        <div class="code-line"><span class="code-comment">// Kernel launch in main:</span></div>
+                        <div class="code-line">myKernel&lt;&lt;&lt;500, 128&gt;&gt;&gt;(dA, dB, dC);</div>
+                    </div>
+
+                    <div class="qa-container">
+                        <!-- Part 1: gridDim.x -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                1. What is gridDim.x for this launch? <strong>(1 mark)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>gridDim.x = <span class="highlight">500</span> (the first parameter in the kernel
+                                        launch configuration)</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>1. الأبعاد (Grid):</strong> الرقم الأول في القوسين
+                                        <code>&lt;&lt;&lt;500, 128&gt;&gt;&gt;</code> هو عدد الـ Blocks (اللي هو 500).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 2: blockDim.x -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                2. What is blockDim.x for this launch? <strong>(1 mark)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>blockDim.x = <span class="highlight">128</span> (the second parameter in the
+                                        kernel launch configuration)</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>2. الأبعاد (Block):</strong> الرقم التاني (128) ده عدد الـ Threads في كل
+                                        Block.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 3: blockIdx Range -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                3. What is the range of blockIdx.x? <strong>(2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>blockIdx.x ranges from <span class="highlight">0 to 499</span> (inclusive).
+                                        <br>Explanation: Indices are 0-based, so max index is (gridDim.x - 1).
+                                    </p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>3. المدى (Block Range):</strong> الـ Blocks مترقمين من 0 لحد 499 (دايماً
+                                        بننقص واحد من العدد الكلي).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 4: threadIdx Range -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                4. What is the range of threadIdx.x? <strong>(2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>threadIdx.x ranges from <span class="highlight">0 to 127</span> (inclusive).</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>4. المدى (Thread Range):</strong> الـ Threads جوه البلوك الواحد مترقمين
+                                        من 0 لحد 127.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 5: Global Index -->
+                        <div class="qa-pair">
+                            <div class="qa-question">
+                                5. Calculate the global index <code>i</code> for the thread in Block 3, Thread 5
+                                <strong>(2 marks)</strong>
+                            </div>
+                            <div class="qa-answer-block">
+                                <div class="qa-english">
+                                    <div class="label-eng">Correct Answer</div>
+                                    <p>For Block 3, Thread 5:</p>
+                                    <div class="code-block" style="margin: 10px 0; padding: 10px;">
+                                        i = blockIdx.x * blockDim.x + threadIdx.x<br>
+                                        i = 3 * 128 + 5<br>
+                                        i = 384 + 5 = <span class="highlight">389</span>
+                                    </div>
+                                    <p>This thread processes element C[389].</p>
+                                </div>
+                                <div class="qa-arabic">
+                                    <div class="label-ar">ال </div>
+                                    <p><strong>5. الحسبة (Global Index):</strong> عشان تعرف "عنوانك" العالمي:<br>
+                                        <code>عنوانك = (رقم عمارتك * حجم العمارة) + رقم شقتك</code><br>
+                                        <code>3 * 128 + 5 = 389</code>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="answer-reference" style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                        📎 Reference: Lecture 7-8 Part 1, Slides on "Calling a Kernel Function" and "Block and Thread
+                        IDs"
+                    </div>
+                </div>
+                <!-- Question 3 -->
+                <div class="question">
+                    <div class="question-header">
+                        <span class="question-number">Question 3</span>
+                        <span class="question-marks">6 marks</span>
+                    </div>
+                    <div class="question-content">
+                        <p class="section-description" style="margin-bottom: 20px; color: #cbd5e1; font-size: 1.1rem;">
+                            <strong>Explain why GPU threads are described as "extremely lightweight" compared to CPU
+                                threads.</strong>
+                        </p>
+                        <p style="margin-bottom: 20px; color: #94a3b8;">Based on the lecture slides, discuss:</p>
+
+                        <div class="qa-container">
+                            <!-- Part 1: Why lightweight -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    1. What makes GPU threads lightweight? <strong>(2 marks)</strong>
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Correct Answer</div>
+                                        <p>GPU threads are extremely lightweight because:</p>
+                                        <ul>
+                                            <li>They have very minimal context storage requirements (registers, local
+                                                memory)</li>
+                                            <li>Hardware is designed to manage thousands of threads simultaneously</li>
+                                            <li>Context switching is essentially free (hardware-managed)</li>
+                                        </ul>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">ال </div>
+                                        <p><strong>1. خفيفة وسريعة:</strong> انشاؤها والتبديل (Context Switching) بينها
+                                            بياخد وقت لا يذكر (Microseconds). الـ Hardware نفسه هو اللي بيدير الموضوع ده
+                                            بسرعة رهيبة.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part 2: Overhead -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    2. Thread creation overhead comparison <strong>(2 marks)</strong>
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Correct Answer</div>
+                                        <p><strong>GPU:</strong> Very little creation overhead - can launch thousands
+                                            efficiently in microseconds.<br>
+                                            <strong>CPU:</strong> Significant overhead for creation and context
+                                            switching (OS-managed).
+                                        </p>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">ال </div>
+                                        <p><strong>مقارنة التكلفة:</strong> الـ CPU بياخد وقت عشان يعمل Thread ويحفظ
+                                            حالته (عن طريق نظام التشغيل). الـ GPU معندوش الكلام ده، العملية بتتم في
+                                            لحظة.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Part 3: Efficiency Count -->
+                            <div class="qa-pair">
+                                <div class="qa-question">
+                                    3. How many threads does a GPU need for full efficiency vs a multi-core CPU?
+                                    <strong>(2 marks)</strong>
+                                </div>
+                                <div class="qa-answer-block">
+                                    <div class="qa-english">
+                                        <div class="label-eng">Correct Answer</div>
+                                        <p><strong>GPU:</strong> Needs <span class="highlight">thousands of
+                                                threads</span> (1000s) to hide memory latency.<br>
+                                            <strong>CPU:</strong> Needs only <span class="highlight">a few
+                                                threads</span> (typically one per core).
+                                        </p>
+                                    </div>
+                                    <div class="qa-arabic">
+                                        <div class="label-ar">ال </div>
+                                        <p><strong>2. العدد في الليمون:</strong> الـ GPU عشان يشتغل صح محتاج آلاف الـ
+                                            Threads شغالة مع بعض. الـ CPU بيشتغل أحسن بعدد قليل من الـ Threads التقيلة.
+                                        </p>
+                                        <p><em>(الـ GPU عامل زي جيش نمل، والـ CPU عامل زي فريق دكاترة)</em></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="answer-reference" style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                            📎 Reference: Lecture 7-8 Part 1, Slide on "CUDA Programming Model: Differences between GPU
+                            and CPU threads"
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SECTION 2: SYNCHRONIZATION -->
+            <div class="section section-sync">
+                <h2 class="section-header">Section 2: Synchronization & Block Independence (35%)</h2>
+                <p class="section-description">
+                    Thread synchronization within blocks, block independence requirements, and scalability
+                </p>
+
+                <!-- Question 4 -->
+                <div class="question">
+                    <div class="question-header">
+                        <span class="question-number">Question 4</span>
+                        <span class="question-marks">12 marks</span>
+                    </div>
+                    <div class="question-content">
+                        <div class="bilingual-grid">
+                            <div class="english-col">
+                                <p><strong>Explain thread synchronization in CUDA using the __syncthreads()
+                                        function.</strong></p>
+                                <p>Analyze the following code pattern from the lecture slides:</p>
+                                <div class="code-block">
+                                    <div class="code-line"><span class="code-comment">// Step 1: Compute partial
+                                            results</span>
+                                    </div>
+                                    <div class="code-line">shared float Ms[BLOCKSIZE][BLOCKSIZE];</div>
+                                    <div class="code-line">Ms[ty][tx] = GetMatrixElement(Msub, tx, ty);</div>
+                                    <div class="code-line"></div>
+                                    <div class="code-line"><span class="code-keyword">__syncthreads()</span>;</div>
+                                    <div class="code-line"></div>
+                                    <div class="code-line"><span class="code-comment">// Step 2: Use partial results
+                                            from all
+                                            threads</span></div>
+                                    <div class="code-line">for (int k = 0; k < BLOCKSIZE; k++) {</div>
+                                            <div class="code-line"> Pvalue += Ms[ty][k] * Ns[k][tx];</div>
+                                            <div class="code-line">}</div>
+                                            <!-- Question 4 -->
+                                            <div class="question">
+                                                <div class="question-header">
+                                                    <span class="question-number">Question 4</span>
+                                                    <span class="question-marks">12 marks</span>
+                                                </div>
+                                                <div class="question-content">
+                                                    <p class="section-description"
+                                                        style="margin-bottom: 20px; color: #cbd5e1; font-size: 1.1rem;">
+                                                        <strong>Analyze the following CUDA code snippet involving Shared
+                                                            Memory and Synchronization:</strong>
+                                                    </p>
+                                                    <div class="code-block">
+                                                        <div class="code-line"><span
+                                                                class="code-keyword">__shared__</span> <span
+                                                                class="code-keyword">float</span>
+                                                            Ms[TILE_WIDTH][TILE_WIDTH];</div>
+                                                        <div class="code-line"></div>
+                                                        <div class="code-line"><span class="code-comment">// 1. Load
+                                                                data into shared memory</span></div>
+                                                        <div class="code-line">Ms[ty][tx] = d_M[row * width + col];
+                                                        </div>
+                                                        <div class="code-line"></div>
+                                                        <div class="code-line"><span
+                                                                class="code-keyword">__syncthreads()</span>;</div>
+                                                        <div class="code-line"></div>
+                                                        <div class="code-line"><span class="code-comment">// 2. Compute
+                                                                using shared memory</span></div>
+                                                        <div class="code-line"><span class="code-keyword">for</span>
+                                                            (<span class="code-keyword">int</span> k = 0; k &lt;
+                                                            TILE_WIDTH; ++k)</div>
+                                                        <div class="code-line"> Pvalue += Ms[ty][k] * Ns[k][tx];</div>
+                                                        <div class="code-line"></div>
+                                                        <div class="code-line"><span
+                                                                class="code-keyword">__syncthreads()</span>;</div>
+                                                    </div>
+
+                                                    <div class="qa-container">
+                                                        <!-- Part 1: Purpose -->
+                                                        <div class="qa-pair">
+                                                            <div class="qa-question">
+                                                                1. What is the purpose of __syncthreads()? <strong>(3
+                                                                    marks)</strong>
+                                                            </div>
+                                                            <div class="qa-answer-block">
+                                                                <div class="qa-english">
+                                                                    <div class="label-eng">Correct Answer</div>
+                                                                    <p><span class="highlight">__syncthreads()</span> is
+                                                                        a barrier synchronization intrinsic that:</p>
+                                                                    <ul>
+                                                                        <li>Synchronizes all threads <strong>within a
+                                                                                thread block</strong>.</li>
+                                                                        <li>Ensures all threads reach the barrier before
+                                                                            any thread proceeds.</li>
+                                                                        <li>Guarantees memory consistency (writes to
+                                                                            shared memory are visible to all).</li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="qa-arabic">
+                                                                    <div class="label-ar">ال </div>
+                                                                    <p><strong>1. يعني إيه
+                                                                            <code>__syncthreads()</code>؟</strong> دي
+                                                                        عامله زي "نقطة تجمع" أو صفارة حكم. بتقول لكل الـ
+                                                                        Threads اللي في نفس البلوك: "محدش يكمل ويمشي
+                                                                        خطوة لقدام غير لما كلكم تتجمعوا هنا".</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Part 2: First Sync -->
+                                                        <div class="qa-pair">
+                                                            <div class="qa-question">
+                                                                2. Why is the first __syncthreads() necessary before the
+                                                                computation loop? <strong>(3 marks)</strong>
+                                                            </div>
+                                                            <div class="qa-answer-block">
+                                                                <div class="qa-english">
+                                                                    <div class="label-eng">Correct Answer</div>
+                                                                    <p>The first barrier is necessary to avoid
+                                                                        <strong>Read-After-Write (RAW) data
+                                                                            hazards</strong>:
+                                                                    </p>
+                                                                    <ul>
+                                                                        <li>It ensures that ALL threads have finished
+                                                                            loading data into the shared memory array
+                                                                            `Ms`.</li>
+                                                                        <li>Without it, some threads might start
+                                                                            computing and reading `Ms` while others
+                                                                            haven't written to it yet (reading garbage
+                                                                            data).</li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="qa-arabic">
+                                                                    <div class="label-ar">ال </div>
+                                                                    <p><strong>2. ليه حطيناها في الأول؟ (قبل
+                                                                            الحساب):</strong> عشان نتأكد إن كل الناس
+                                                                        خلصت تحميل الداتا بتاعتها في الـ Shared Memory.
+                                                                        لو واحد سابق وبدأ يشتغل يحسب والتاني لسه بيحمل،
+                                                                        السريع ده هيقرأ داتا غلط (Garbage).</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Part 3: Second Sync -->
+                                                        <div class="qa-pair">
+                                                            <div class="qa-question">
+                                                                3. Why is the second __syncthreads() necessary after the
+                                                                computation? <strong>(3 marks)</strong>
+                                                            </div>
+                                                            <div class="qa-answer-block">
+                                                                <div class="qa-english">
+                                                                    <div class="label-eng">Correct Answer</div>
+                                                                    <p>The second barrier is necessary to avoid
+                                                                        <strong>Write-After-Read (WAR) data
+                                                                            hazards</strong>:
+                                                                    </p>
+                                                                    <ul>
+                                                                        <li>It ensures that ALL threads have finished
+                                                                            using the current data in `Ms` for
+                                                                            computation.</li>
+                                                                        <li>Important if `Ms` is reused in the next loop
+                                                                            iteration. Without it, fast threads might
+                                                                            overwrite `Ms` with new data while slow
+                                                                            threads are still reading the old data.</li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="qa-arabic">
+                                                                    <div class="label-ar">ال </div>
+                                                                    <p><strong>3. ليه حطيناها في الآخر؟ (بعد
+                                                                            الحساب):</strong> دي بقى عشان "تأمين
+                                                                        المستقبل". لو عندنا لفة تانية (Loop iteration)
+                                                                        وهنحط داتا جديدة في نفس المتغير، لازم نتأكد إن
+                                                                        كل الناس خلصت حسابات بالداتا القديمة قبل ما
+                                                                        نمسحها ونكتب عليها.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Part 4: Omission Consequences -->
+                                                        <div class="qa-pair">
+                                                            <div class="qa-question">
+                                                                4. What would happen if __syncthreads() was omitted?
+                                                                <strong>(3 marks)</strong>
+                                                            </div>
+                                                            <div class="qa-answer-block">
+                                                                <div class="qa-english">
+                                                                    <div class="label-eng">Correct Answer</div>
+                                                                    <p><strong>Without synchronization:</strong></p>
+                                                                    <ul>
+                                                                        <li><strong>Race Conditions:</strong> Behavior
+                                                                            depends on which thread runs faster.</li>
+                                                                        <li><strong>Incorrect Results:</strong> Threads
+                                                                            read uninitialized or overwritten data.</li>
+                                                                        <li><strong>Silent Errors:</strong> Program runs
+                                                                            but output is wrong.</li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="qa-arabic">
+                                                                    <div class="label-ar">ال </div>
+                                                                    <p><strong>4. لو شلناها يحصل إيه؟</strong> فوضى
+                                                                        (Race Condition)! فيه threads سريعة هتقرأ حاجات
+                                                                        لسه متكتبتش، أو تكتب على حاجات لسه حد تاني
+                                                                        بيقراها. النتيجة هتبقى "عك" وأرقام غلط.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="answer-reference"
+                                                        style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                                                        📎 Reference: Lecture 7-8 Part 1, Slides on "Barrier
+                                                        Synchronization" and Usage Examples
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Question 5 -->
+                                            <!-- Question 5 -->
+                                            <div class="question">
+                                                <div class="question-header">
+                                                    <span class="question-number">Question 5</span>
+                                                    <span class="question-marks">10 marks</span>
+                                                </div>
+                                                <div class="question-content">
+                                                    <p class="section-description"
+                                                        style="margin-bottom: 20px; color: #cbd5e1; font-size: 1.1rem;">
+                                                        <strong>The lecture states: "Thread blocks must be independent -
+                                                            program must be valid for any interleaving of block
+                                                            executions."</strong>
+                                                    </p>
+                                                    <p style="margin-bottom: 20px; color: #94a3b8;">Explain block
+                                                        independence and scalability:</p>
+
+                                                    <div class="qa-container">
+                                                        <!-- Part 1: Independence Requirement -->
+                                                        <div class="qa-pair">
+                                                            <div class="qa-question">
+                                                                1. Why must CUDA thread blocks be independent tasks?
+                                                                <strong>(3 marks)</strong>
+                                                            </div>
+                                                            <div class="qa-answer-block">
+                                                                <div class="qa-english">
+                                                                    <div class="label-eng">Correct Answer</div>
+                                                                    <p>CUDA thread blocks must be independent because:
+                                                                    </p>
+                                                                    <ul>
+                                                                        <li><strong>Scalability Requirement:</strong>
+                                                                            The runtime must be able to schedule blocks
+                                                                            in ANY order (concurrently or sequentially)
+                                                                            depending on available hardware.</li>
+                                                                        <li><strong>No Execution Guarantees:</strong>
+                                                                            There is no guarantee which block starts
+                                                                            first or finishes first.</li>
+                                                                        <li><strong>Program Correctness:</strong> The
+                                                                            result must be valid regardless of the
+                                                                            execution order.</li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="qa-arabic">
+                                                                    <div class="label-ar">ال </div>
+                                                                    <p><strong>1. ليه لازم كل بلوك يبقى مستقل؟</strong>
+                                                                        عشان الـ GPU ميبقاش "متكتف". لازم يقدر يشغل أي
+                                                                        بلوك في أي وقت وعلى أي مكان فاضي، من غير ما
+                                                                        يستنى بلوك تاني يخلص. لو اعتمدوا على بعض، الدنيا
+                                                                        هتقف (Deadlock).</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Part 2: Scalability -->
+                                                        <div class="qa-pair">
+                                                            <div class="qa-question">
+                                                                2. Explain how block independence enables scalability
+                                                                across different GPU architectures <strong>(3
+                                                                    marks)</strong>
+                                                            </div>
+                                                            <div class="qa-answer-block">
+                                                                <div class="qa-english">
+                                                                    <div class="label-eng">Correct Answer</div>
+                                                                    <p>Block independence allows automatic scalability
+                                                                        (Write Once, Run Anywhere):</p>
+                                                                    <ul>
+                                                                        <li>On a small GPU (few cores): Executed
+                                                                            sequentially (few blocks at a time).</li>
+                                                                        <li>On a large GPU (many cores): Executed
+                                                                            concurrently (many blocks at once).</li>
+                                                                        <li>The same code runs efficiently on both
+                                                                            without modification.</li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="qa-arabic">
+                                                                    <div class="label-ar">ال </div>
+                                                                    <p><strong>2. المرونة والمستقبل
+                                                                            (Scalability):</strong> الكود اللي تكتبه مرة
+                                                                        واحدة يشتغل على كرت ضعيف (يشغل بلوكين بلوكين)
+                                                                        ويشتغل على كرت عملاق (يشغل 100 بلوك مع بعض).
+                                                                        الكود مش محتاج يتعدل، الـ GPU هو اللي بيتصرف حسب
+                                                                        إمكانياته.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="diagram-container" style="margin: 20px 0;">
+                                                            <div class="diagram-placeholder">
+                                                                [Scalability Diagram: Same CUDA program running on
+                                                                different GPUs]<br>
+                                                                8300GS (8 cores) → 9400M (16 cores) → 8800GTX (128
+                                                                cores) → GTX285 (240 cores)<br>
+                                                                Blocks execute concurrently OR sequentially based on
+                                                                available hardware
+                                                            </div>
+                                                            <div class="diagram-caption">Figure: CUDA program scales
+                                                                automatically across GPU generations</div>
+                                                        </div>
+
+                                                        <!-- Part 3: Coordination -->
+                                                        <div class="qa-pair">
+                                                            <div class="qa-question">
+                                                                3. What mechanisms are available for blocks to
+                                                                coordinate, and why are shared locks BAD between blocks?
+                                                                <strong>(4 marks)</strong>
+                                                            </div>
+                                                            <div class="qa-answer-block">
+                                                                <div class="qa-english">
+                                                                    <div class="label-eng">Correct Answer</div>
+                                                                    <p><strong>Mechanisms:</strong> Atomic operations
+                                                                        (global memory), Kernel boundaries (finish one
+                                                                        kernel, start next), Global memory communication
+                                                                        (carefully).</p>
+                                                                    <p><strong>Why Locks are BAD (Deadlock
+                                                                            Danger):</strong></p>
+                                                                    <ul>
+                                                                        <li>If Block A holds a lock and waits for Block
+                                                                            B, but Block B hasn't started yet (because
+                                                                            hardware is full), Block B can never start
+                                                                            because Block A is occupying the resources.
+                                                                        </li>
+                                                                        <li>This results in a <strong>Deadlock</strong>
+                                                                            that halts the GPU.</li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="qa-arabic">
+                                                                    <div class="label-ar">ال </div>
+                                                                    <p><strong>3. ليه الـ Locks وحشة؟
+                                                                            (Deadlock):</strong> تخيل بلوك (أ) ماسك
+                                                                        "الحمام" ومستني بلوك (ب) يديله الفوطة. وبلوك (ب)
+                                                                        أصلاً واقف بره مش عارف يدخل عشان (أ) حاجز
+                                                                        المكان. (أ) مش هيخرج غير لما (ب) يدخل، و(ب) مش
+                                                                        عارف يدخل غير لما (أ) يخرج. الجهاز هيهنج للأبد
+                                                                        (Deadlock).</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="answer-reference"
+                                                        style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                                                        📎 Reference: Lecture 7-8 Part 1, Slides on "Thread Batching",
+                                                        "Program Design", and Scalability
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Question 6 -->
+                                            <div class="question">
+                                                <div class="question-header">
+                                                    <span class="question-number">Question 6</span>
+                                                    <span class="question-marks">4 marks</span>
+                                                </div>
+                                                <div class="question-content">
+                                                    <div class="qa-pair">
+                                                        <div class="qa-question">
+                                                            <p style="margin-bottom: 15px;"><strong>State whether the
+                                                                    following statement is TRUE or FALSE and provide a
+                                                                    detailed explanation:</strong></p>
+                                                            <div class="warning-box" style="margin-bottom: 20px;">
+                                                                "Threads in different blocks can use __syncthreads() to
+                                                                coordinate their execution and safely share data through
+                                                                global memory."
+                                                            </div>
+                                                        </div>
+                                                        <div class="qa-answer-block">
+                                                            <div class="qa-english">
+                                                                <div class="label-eng">Correct Answer</div>
+                                                                <p><strong>Answer: <span class="highlight"
+                                                                            style="color: #ef4444;">FALSE</span></strong>
+                                                                </p>
+                                                                <p>This statement is incorrect because:</p>
+                                                                <ul>
+                                                                    <li><strong>__syncthreads() scope:</strong> It ONLY
+                                                                        synchronizes threads <span
+                                                                            class="highlight">within a single thread
+                                                                            block</span>. It has no effect across
+                                                                        different blocks.</li>
+                                                                    <li><strong>Block Independence:</strong> The CUDA
+                                                                        model requires blocks to be independent. They
+                                                                        cannot synchronize with each other directly.
+                                                                    </li>
+                                                                    <li><strong>Deadlock Risk:</strong> Attempting to
+                                                                        force synchronization (e.g., via locks) between
+                                                                        different blocks usually leads to
+                                                                        <strong>DEADLOCK</strong> because there are no
+                                                                        scheduling guarantees (Block A waits for Block
+                                                                        B, but Block B isn't running yet).
+                                                                    </li>
+                                                                </ul>
+                                                                <p><strong>Correct approach:</strong> To synchronize
+                                                                    across all threads, you must finish the kernel
+                                                                    launch (Global Barrier) and start a new kernel.</p>
+                                                            </div>
+                                                            <div class="qa-arabic">
+                                                                <div class="label-ar">ال </div>
+                                                                <p><strong>غلط طبعاً (False):</strong></p>
+                                                                <ul>
+                                                                    <li><strong>1. حدود __syncthreads():</strong> الأمر
+                                                                        ده شغال بس جوه "العمارة" الواحدة (Block). ملوش
+                                                                        أي سيطرة على العمارات التانية.</li>
+                                                                    <li><strong>2. استقلال البلوكات:</strong> زي ما
+                                                                        قلنا، كل بلوك في حاله. مفيش وسيلة رسمية تخليهم
+                                                                        يستنوا بعض جوه نفس الـ Kernel.</li>
+                                                                    <li><strong>3. خطر الـ Deadlock:</strong> لو حاولت
+                                                                        تخليهم يستنوا بعض (مثلاً بـ Locks)، الجهاز هيهنج
+                                                                        (Deadlock) لأن ممكن بلوك يكون مستني بلوك تاني
+                                                                        لسه الـ GPU مشغلوش أصلاً (عشان مفيش مكان).</li>
+                                                                    <li><strong>الحل:</strong> لو عايزهم يكلموا بعض، خلص
+                                                                        الـ Kernel ده خالص، وابدأ Kernel جديد. دي
+                                                                        الطريقة الوحيدة المضمونة (Global Barrier).</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="answer-reference"
+                                                        style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                                                        📎 Reference: Lecture 7-8 Part 1, Slides on "Thread Batching"
+                                                        and "Program Design"
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                    </div>
+
+                                    <!-- SECTION 3: PRACTICAL ANALYSIS -->
+                                    <div class="section section-practical">
+                                        <h2 class="section-header">Section 3: Practical Thread Management (25%)</h2>
+                                        <p class="section-description">
+                                            Thread organization, memory spaces, execution configuration, and practical
+                                            considerations
+                                        </p>
+
+                                        <!-- Question 7 -->
+                                        <div class="question">
+                                            <div class="question-header">
+                                                <span class="question-number">Question 7</span>
+                                                <span class="question-marks">8 marks</span>
+                                            </div>
+                                            <div class="question-content">
+                                                <p class="section-description" style="margin-bottom: 20px;">
+                                                    <strong>Based on the lecture slides' recommendations for optimal
+                                                        thread configuration:</strong>
+                                                </p>
+
+                                                <div class="qa-container">
+                                                    <!-- Part 1: Threads per Block -->
+                                                    <div class="qa-pair">
+                                                        <div class="qa-question">
+                                                            1. What is the minimum number of threads recommended per
+                                                            block? What is the ideal range? <strong>(2 marks)</strong>
+                                                        </div>
+                                                        <div class="qa-answer-block">
+                                                            <div class="qa-english">
+                                                                <div class="label-eng">Correct Answer</div>
+                                                                <p>According to "Program Design - Threads":</p>
+                                                                <ul>
+                                                                    <li><strong>Minimum:</strong> <span
+                                                                            class="highlight">64 threads per
+                                                                            block</span>.</li>
+                                                                    <li><strong>Ideal range:</strong> <span
+                                                                            class="highlight">192-256 threads per
+                                                                            block</span>.</li>
+                                                                </ul>
+                                                                <p>This ensures enough parallelism to hide latency and
+                                                                    keep the multiprocessor busy.</p>
+                                                            </div>
+                                                            <div class="qa-arabic">
+                                                                <div class="label-ar">ال </div>
+                                                                <p><strong>1. العدد المناسب:</strong></p>
+                                                                <ul>
+                                                                    <li>أقل واجب: <strong>64 thread</strong> في البلوك
+                                                                        الواحد.</li>
+                                                                    <li>الأحسن والـ Ideal: <strong>من 192 لـ 256
+                                                                            thread</strong> في البلوك. ده العدد اللي
+                                                                        بيخلي الـ GPU يشتغل بكفاءة عالية.</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Part 2: Latency Hiding -->
+                                                    <div class="qa-pair">
+                                                        <div class="qa-question">
+                                                            2. Why are more threads per block better for performance
+                                                            (time slicing)? <strong>(2 marks)</strong>
+                                                        </div>
+                                                        <div class="qa-answer-block">
+                                                            <div class="qa-english">
+                                                                <div class="label-eng">Correct Answer</div>
+                                                                <p>More threads enable efficient <strong>Latency
+                                                                        Hiding</strong>:</p>
+                                                                <ul>
+                                                                    <li>When some threads stall (e.g., waiting for
+                                                                        memory), the hardware immediately switches to
+                                                                        other ready threads.</li>
+                                                                    <li><strong>Zero-overhead switching:</strong> This
+                                                                        context switch is free (0 cycles), maximizing
+                                                                        resource utilization (keeping CUDA cores busy).
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                            <div class="qa-arabic">
+                                                                <div class="label-ar">ال </div>
+                                                                <p><strong>2. ليه الزحمة (threads كتير) حلوة؟</strong>
+                                                                </p>
+                                                                <p>عشان "يغطوا على بعض" (Latency Hiding). لو شوية
+                                                                    threads وقفوا عشان مستنيين داتا من الميموري، الـ GPU
+                                                                    مش بيعطل، بيقوم مشغل threads تانية فوراً. التبديل
+                                                                    بينهم لحظي (Zero cost)، فكأن الـ GPU شغال طحن طول
+                                                                    الوقت ومفيش لحظة فراغ.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Part 3: Trade-offs -->
+                                                    <div class="qa-pair">
+                                                        <div class="qa-question">
+                                                            3. What is the trade-off when using more threads per block?
+                                                            <strong>(2 marks)</strong>
+                                                        </div>
+                                                        <div class="qa-answer-block">
+                                                            <div class="qa-english">
+                                                                <div class="label-eng">Correct Answer</div>
+                                                                <p>The trade-off is <strong>Register Pressure</strong>:
+                                                                </p>
+                                                                <ul>
+                                                                    <li>Registers are a limited resource partitioned
+                                                                        among threads.</li>
+                                                                    <li>More threads = Fewer registers available per
+                                                                        thread.</li>
+                                                                    <li>If a kernel needs more registers than available
+                                                                        per thread given the block size, the kernel
+                                                                        launch will <strong>FAIL</strong> or occupancy
+                                                                        will be reduced.</li>
+                                                                </ul>
+                                                            </div>
+                                                            <div class="qa-arabic">
+                                                                <div class="label-ar">ال </div>
+                                                                <p><strong>3. إيه الثمن؟ (Registers):</strong></p>
+                                                                <p>الـ Registers (الذاكرة السريعة جوه الكور) دي تورطة
+                                                                    بتتقسم على المعازيم (Threads). كل ما الـ Threads
+                                                                    تزيد، نصيب الواحد من التورطة يقل.</p>
+                                                                <p>لو الكود بتاعك محتاج registers كتير لكل thread، وزودت
+                                                                    عدد الـ threads أوي، التورطة مش هتكفي والكيرنل مش
+                                                                    هيشتغل أصلاً (Launch Failure).</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Part 4: Scalability -->
+                                                    <div class="qa-pair">
+                                                        <div class="qa-question">
+                                                            4. For scalability, how many blocks should be launched
+                                                            minimum, and why at least 100 blocks? <strong>(2
+                                                                marks)</strong>
+                                                        </div>
+                                                        <div class="qa-answer-block">
+                                                            <div class="qa-english">
+                                                                <div class="label-eng">Correct Answer</div>
+                                                                <ul>
+                                                                    <li><strong>Minimum:</strong> At least as many
+                                                                        blocks as there are Multiprocessors (SMs) on the
+                                                                        GPU, to occupy them all.</li>
+                                                                    <li><strong>Recommendation:</strong> At least
+                                                                        <strong>100 blocks</strong> (or 1000s).
+                                                                    </li>
+                                                                    <li><strong>Why?</strong> To ensure automatic
+                                                                        scalability to future GPUs with more cores. The
+                                                                        more blocks available, the more the hardware can
+                                                                        parallelize them.</li>
+                                                                </ul>
+                                                            </div>
+                                                            <div class="qa-arabic">
+                                                                <div class="label-ar">ال </div>
+                                                                <p><strong>4. عدد البلوكات (كل ما تكتر يكون
+                                                                        أحسن):</strong></p>
+                                                                <p>أقل حاجة: عدد بلوكات يساوي عدد الـ Multiprocessors في
+                                                                    الكارت عشان ميبقاش فيه جزء عاطل.</p>
+                                                                <p>بس الصح؟ خليك فوق الـ <strong>100 بلوك</strong>. ليه؟
+                                                                    عشان لما تشتري كارت شاشة جديد بعد سنة ويكون فيه كورز
+                                                                    أكتر بكتير، الكود بتاعك يفرش ويشتغل عليهم كلهم من
+                                                                    غير ما تحتاج تعدله. ده معنى الـ Scalability.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="answer-reference"
+                                                    style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                                                    📎 Reference: Lecture 7-8 Part 1, Slide on "Program Design -
+                                                    Threads"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Question 8 -->
+                                    <div class="question">
+                                        <div class="question-header">
+                                            <span class="question-number">Question 8</span>
+                                            <span class="question-marks">10 marks</span>
+                                        </div>
+                                        <div class="question-content">
+                                            <p style="margin-bottom: 20px;">
+                                                <strong>Explain the CUDA device memory hierarchy as presented in the
+                                                    lecture slides.</strong>
+                                            </p>
+
+                                            <div class="diagram-container">
+                                                <div class="diagram-placeholder">
+                                                    [CUDA Memory Hierarchy Diagram]<br><br>
+                                                    <strong>Host</strong> can R/W: Global, Constant, Texture
+                                                    Memory<br><br>
+                                                    <strong>Each Thread</strong> can:<br>
+                                                    - R/W per-thread Registers<br>
+                                                    - R/W per-thread Local Memory<br>
+                                                    - R/W per-block Shared Memory<br>
+                                                    - R/W per-grid Global Memory<br>
+                                                    - Read only per-grid Constant Memory<br>
+                                                    - Read only per-grid Texture Memory
+                                                </div>
+                                                <div class="diagram-caption">Figure: CUDA Device Memory Space Overview
+                                                </div>
+                                            </div>
+
+                                            <div class="qa-container">
+                                                <!-- Part A: Registers & Local -->
+                                                <div class="qa-pair">
+                                                    <div class="qa-question">
+                                                        a) Describe the scope and access rights for registers and local
+                                                        memory <strong>(2 marks)</strong>
+                                                    </div>
+                                                    <div class="qa-answer-block">
+                                                        <div class="qa-english">
+                                                            <div class="label-eng">Correct Answer</div>
+                                                            <ul>
+                                                                <li><strong>Registers:</strong> Scope is per-thread.
+                                                                    Access is Read/Write. Fastest memory.</li>
+                                                                <li><strong>Local Memory:</strong> Scope is per-thread.
+                                                                    Access is Read/Write. Stored in global memory (slow)
+                                                                    but physically private to the thread.</li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="qa-arabic">
+                                                            <div class="label-ar">ال </div>
+                                                            <p><strong>1. Registers (جيبك الخاص):</strong></p>
+                                                            <p>دي بتاعتك لوحدك (Thread-Private). محدش يقدر يشوفها غيرك.
+                                                                سريعة جداً (صاروخ).</p>
+                                                            <p><strong>Local Memory:</strong> دي برضه خاصة بيك، بس خدعة!
+                                                                هي بتتحط في الـ RAM البطيئة (Global) بس معمولة عشان تشيل
+                                                                الزيادات اللي مش مكفية في الـ Registers.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Part B: Shared Memory -->
+                                                <div class="qa-pair">
+                                                    <div class="qa-question">
+                                                        b) Describe shared memory: scope, access, and purpose <strong>(2
+                                                            marks)</strong>
+                                                    </div>
+                                                    <div class="qa-answer-block">
+                                                        <div class="qa-english">
+                                                            <div class="label-eng">Correct Answer</div>
+                                                            <ul>
+                                                                <li><strong>Scope:</strong> <span
+                                                                        class="highlight">Per-block</span> - visible to
+                                                                    all threads in the same block.</li>
+                                                                <li><strong>Access:</strong> Read/Write mainly by
+                                                                    threads in the block.</li>
+                                                                <li><strong>Purpose:</strong> Explicitly managed cache
+                                                                    for data sharing between threads.</li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="qa-arabic">
+                                                            <div class="label-ar">ال </div>
+                                                            <p><strong>2. Shared Memory (الصالة المشتركة):</strong></p>
+                                                            <p>دي بتاعة "الشقة" كلها (Block). كل الـ Threads اللي ساكنين
+                                                                معاك في نفس البلوك يقدروا يشوفوها ويستخدموها عشان يكلموا
+                                                                بعض. سريعة جداً زي الكاش.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Part C: Global Memory -->
+                                                <div class="qa-pair">
+                                                    <div class="qa-question">
+                                                        c) Describe global memory: scope, access, and primary use
+                                                        <strong>(2 marks)</strong>
+                                                    </div>
+                                                    <div class="qa-answer-block">
+                                                        <div class="qa-english">
+                                                            <div class="label-eng">Correct Answer</div>
+                                                            <ul>
+                                                                <li><strong>Scope:</strong> <span
+                                                                        class="highlight">Per-grid</span> - visible to
+                                                                    all threads in all blocks.</li>
+                                                                <li><strong>Access:</strong> All threads can Read/Write.
+                                                                    Host can also Read/Write.</li>
+                                                                <li><strong>Primary Use:</strong> Communicating data
+                                                                    between Host and Device, and sharing data across
+                                                                    different blocks.</li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="qa-arabic">
+                                                            <div class="label-ar">ال </div>
+                                                            <p><strong>3. Global Memory (الشارع العمومي):</strong></p>
+                                                            <p>دي بتاعة الحي كله (Grid). أي حد في أي بلوك يقدر يشوفها.
+                                                                بس عيبها إنها <strong>بطيئة جداً (سلحفاة)</strong>،
+                                                                فلازم تستخدمها بحكمة (للإدخال والإخراج بس).</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Part D: Constant & Texture -->
+                                                <div class="qa-pair">
+                                                    <div class="qa-question">
+                                                        d) Describe constant and texture memories: scope, access
+                                                        restrictions, and characteristics <strong>(2 marks)</strong>
+                                                    </div>
+                                                    <div class="qa-answer-block">
+                                                        <div class="qa-english">
+                                                            <div class="label-eng">Correct Answer</div>
+                                                            <ul>
+                                                                <li><strong>Constant Memory:</strong> Per-grid, <span
+                                                                        class="highlight">Read-only</span> (device).
+                                                                    Cached. Optimized for broadcast (all threads reading
+                                                                    same value).</li>
+                                                                <li><strong>Texture Memory:</strong> Per-grid, <span
+                                                                        class="highlight">Read-only</span> (device).
+                                                                    Cached. Optimized for spatial locality (2D/3D).</li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="qa-arabic">
+                                                            <div class="label-ar">ال </div>
+                                                            <p><strong>4. Constant/Texture (يفط إعلانات):</strong></p>
+                                                            <p>دي للقراية بس (Read-only). الـ Host بيكتبها مرة، والـ
+                                                                Threads بتقراها طول الوقت. سريعة عشان بتستخدم Cache
+                                                                مخصوص.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Part E: Latency -->
+                                                <div class="qa-pair">
+                                                    <div class="qa-question">
+                                                        e) Compare latency: shared memory vs global memory <strong>(2
+                                                            marks)</strong>
+                                                    </div>
+                                                    <div class="qa-answer-block">
+                                                        <div class="qa-english">
+                                                            <div class="label-eng">Correct Answer</div>
+                                                            <p>Based on G80 specs:</p>
+                                                            <ul>
+                                                                <li><strong>Shared Memory:</strong> ~2 cycles.</li>
+                                                                <li><strong>Global Memory:</strong> ~300 cycles.</li>
+                                                            </ul>
+                                                            <p><strong>Result:</strong> Shared memory is approx
+                                                                <strong>150x faster</strong>.
+                                                            </p>
+                                                        </div>
+                                                        <div class="qa-arabic">
+                                                            <div class="label-ar">ال </div>
+                                                            <p><strong>5. فرق السرعة (سنة ضوئية):</strong></p>
+                                                            <p>الـ Shared أسرع بكتير (2 cycles) من الـ Global (300
+                                                                cycles). يعني الـ Shared أسرع 150 مرة! عشان كده الشطارة
+                                                                إنك تحمل الداتا من الـ Global للـ Shared وتشتغل عليها
+                                                                هناك.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="answer-reference"
+                                                style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                                                📎 Reference: Lecture 7-8 Part 1, Slides on "CUDA Device Memory Space"
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Question 9 -->
+                                <div class="question">
+                                    <div class="question-header">
+                                        <span class="question-number">Question 9</span>
+                                        <span class="question-marks">6 marks</span>
+                                    </div>
+                                    <div class="question-content">
+                                        <p><strong>Analyze the following 2D thread block configuration:</strong></p>
+                                        <div class="code-block">
+                                            <div class="code-line">dim3 dimBlock(32, 8); <span class="code-comment">//
+                                                    32x8 = 256 threads</span></div>
+                                            <div class="code-line">dim3 dimGrid(100, 50); <span class="code-comment">//
+                                                    100x50 = 5000 blocks</span></div>
+                                            <div class="code-line"></div>
+                                            <div class="code-line">myKernel&lt;&lt;&lt;dimGrid,
+                                                dimBlock&gt;&gt;&gt;(...);</div>
+                                        </div>
+
+                                        <div class="qa-container">
+                                            <!-- Part A: Threads per block -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    a) How many threads are in each block? <strong>(1 mark)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <p>Threads per block = dimBlock.x × dimBlock.y = 32 × 8 = <span
+                                                                class="highlight">256 threads</span></p>
+                                                    </div>
+                                                    <div class="qa-arabic">
+                                                        <div class="label-ar">ال </div>
+                                                        <p><strong>1. عدد الـ Threads في البلوك:</strong></p>
+                                                        <p>ضرب عادي: 32 في 8 بيساوي <strong>256 thread</strong> في كل
+                                                            بلوك.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Part B: Blocks in grid -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    b) How many blocks are in the grid? <strong>(1 mark)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <p>Blocks in grid = dimGrid.x × dimGrid.y = 100 × 50 = <span
+                                                                class="highlight">5000 blocks</span></p>
+                                                    </div>
+                                                    <div class="qa-arabic">
+                                                        <div class="label-ar">ال </div>
+                                                        <p><strong>2. عدد البلوكات في الجريد:</strong></p>
+                                                        <p>برضو ضرب عادي: 100 في 50 بيساوي <strong>5000 بلوك</strong>.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Part C: Total Threads -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    c) How many total threads are launched? <strong>(1 mark)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <p>Total threads = (threads per block) × (blocks in grid)</p>
+                                                        <p>Total threads = 256 × 5000 = <span
+                                                                class="highlight">1,280,000 threads</span></p>
+                                                    </div>
+                                                    <div class="qa-arabic">
+                                                        <div class="label-ar">ال </div>
+                                                        <p><strong>3. الجيش كله (Total Threads):</strong></p>
+                                                        <p>اضرب عدد العساكر في كل كتيبة (256) في عدد الكتائب (5000).
+                                                            الناتج: <strong>مليون و280 ألف thread</strong>.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Part D: Global Thread ID -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    d) If a thread has threadIdx.x=3, threadIdx.y=7, blockIdx.x=99,
+                                                    blockIdx.y=49, calculate its global thread ID (assuming 2D
+                                                    indexing). <strong>(3 marks)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <div class="code-block">
+                                                            <div class="code-line"><span class="code-comment">// Global
+                                                                    ID in X dimension:</span></div>
+                                                            <div class="code-line">global_x = blockIdx.x * blockDim.x +
+                                                                threadIdx.x</div>
+                                                            <div class="code-line">global_x = 99 * 32 + 3 = 3168 + 3 =
+                                                                <span class="highlight">3171</span>
+                                                            </div>
+                                                            <div class="code-line"></div>
+                                                            <div class="code-line"><span class="code-comment">// Global
+                                                                    ID in Y dimension:</span></div>
+                                                            <div class="code-line">global_y = blockIdx.y * blockDim.y +
+                                                                threadIdx.y</div>
+                                                            <div class="code-line">global_y = 49 * 8 + 7 = 392 + 7 =
+                                                                <span class="highlight">399</span>
+                                                            </div>
+                                                        </div>
+                                                        <p>This thread processes element <strong>(3171, 399)</strong>.
+                                                        </p>
+                                                        <p><strong>Note:</strong> This is the last thread (3,7) in the
+                                                            last block (99,49), processing the bottom-right corner.</p>
+                                                    </div>
+                                                    <div class="qa-arabic">
+                                                        <div class="label-ar">ال </div>
+                                                        <p><strong>4. مكاني فين؟ (Global ID):</strong></p>
+                                                        <p>نفس القانون القديم (رقم البلوك × حجم البلوك + رقمي جوه
+                                                            البلوك) بس بنطبقه مرتين، مرة للـ X ومرة للـ Y.</p>
+                                                        <p>كأنك بتحدد إحداثيات (Coordinates) بكسل في صورة كبيرة. البلوك
+                                                            هو "المربع" الكبير، والـ Thread هو "النقطة" جوه المربع.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="answer-reference"
+                                            style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                                            📎 Reference: Lecture 7-8 Part 1, Slides on "Block and Thread IDs"
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                            <!-- BONUS QUESTIONS -->
+                            <div class="section" style="border: 2px solid rgba(251, 191, 36, 0.4);">
+                                <h2 class="section-header" style="color: #fbbf24;">Bonus Section: Advanced
+                                    Understanding
+                                </h2>
+                                <p class="section-description" style="border-left-color: #fbbf24;">
+                                    These questions test deeper understanding of CUDA concepts
+                                </p>
+
+                                <!-- Question 10 -->
+                                <div class="question">
+                                    <div class="question-header">
+                                        <span class="question-number">Question 10 (BONUS)</span>
+                                        <span class="question-marks">5 marks</span>
+                                    </div>
+                                    <div class="question-content">
+                                        <p><strong>Explain why the lecture states that CUDA function declarations have
+                                                specific execution and calling restrictions.</strong></p>
+                                        <p>Based on the slides, explain the restrictions for functions with the
+                                            <code>__device__</code> specifier:
+                                        </p>
+
+                                        <div class="qa-container">
+                                            <!-- Part A: Taking Address -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    a) Can you take the address of a <code>__device__</code> function?
+                                                    Why or why not? <strong>(1 mark)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <p><span class="highlight">No</span>, device functions cannot
+                                                            have their address taken. This is because function pointers
+                                                            would complicate the compilation and optimization process
+                                                            for GPU code.</p>
+                                                    </div>
+                                                    <div class="qa-arabic">
+                                                        <div class="label-ar">ال </div>
+                                                        <p><strong>1. عنوان الدالة (Address):</strong></p>
+                                                        <p>ممنوع تاخد عنوانها (Function Pointer) عشان ده بيعقد الـ
+                                                            Compiler وبيمنعه إنه يعمل Optimization (زي الـ Inlining)
+                                                            اللي بنعتمد عليه عشان السرعة.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Part B: Recursion -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    b) Can <code>__device__</code> functions use recursion? <strong>(1
+                                                        mark)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <p><span class="highlight">No</span>, no recursion is allowed in
+                                                            device functions. GPU hardware traditionally didn't support
+                                                            a call stack needed for recursion (though newer
+                                                            architectures have limited support).</p>
+                                                    </div>
+                                                    <div class="qa-arabic">
+                                                        <div class="label-ar">ال </div>
+                                                        <p><strong>2. الـ Recursion (الدالة تنده نفسها):</strong></p>
+                                                        <p>ممنوع، لأن الـ GPU زمان مكنش عنده Call Stack للـ Threads
+                                                            الكثيرة دي. لو دالة ندهت نفسها، مش هتعرف ترجع.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Part C: Static Variables -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    c) Can <code>__device__</code> functions declare static variables?
+                                                    <strong>(1 mark)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <p><span class="highlight">No</span>, no static variable
+                                                            declarations inside the function. Static variables would
+                                                            require per-thread persistent storage that complicates
+                                                            memory management.</p>
+                                                    </div>
+                                                    <div class="qa-arabic">
+                                                        <div class="label-ar">ال </div>
+                                                        <p><strong>3. الـ Static Variables:</strong></p>
+                                                        <p>ممنوع، تخيل آلاف الـ Threads بيحاولوا يكتبوا في نفس المتغير
+                                                            الـ Static في نفس الوقت؟ دي هتبقى " Race Condition" ومجزرة
+                                                            في الميموري.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Part D: Variable Arguments -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    d) Can <code>__device__</code> functions have variable number of
+                                                    arguments? <strong>(1 mark)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <p><span class="highlight">No</span>, no variable number of
+                                                            arguments (varargs) like <code>printf</code> are supported
+                                                            (in standard context).</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Part E: Why Restrictons -->
+                                            <div class="qa-pair">
+                                                <div class="qa-question">
+                                                    e) Why do these restrictions exist? <strong>(1 mark)</strong>
+                                                </div>
+                                                <div class="qa-answer-block">
+                                                    <div class="qa-english">
+                                                        <div class="label-eng">Correct Answer</div>
+                                                        <ul>
+                                                            <li>GPU execution model is different from CPU.</li>
+                                                            <li>Simplifies compilation and enables aggressive
+                                                                optimization (Inlining).</li>
+                                                            <li>Reduces hardware complexity (managing thousands of
+                                                                threads).</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="qa-arabic">
+                                                        <div class="label-ar">ال </div>
+                                                        <p><strong>الخلاصة (ليه التعقيد ده؟):</strong></p>
+                                                        <p>عشان السرعة! الـ Compiler عايز الكود يبقى بسيط ومفرود
+                                                            (Inline) عشان يجري بأقصى سرعة من غير ما يتعطل في إدارة الـ
+                                                            Stack أو الـ Pointers.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="answer-reference"
+                                            style="margin-top: 15px; color: #94a3b8; font-size: 0.9em;">
+                                            📎 Reference: Lecture 7-8 Part 1, Slide on "CUDA Function Declarations
+                                            cont."
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <footer>
+                                <p>📚 HPC Exam - CUDA Programming Model | Lecture 7-8 Part 1</p>
+                                <p>Generated based on lecture slides - All answers reference specific slides</p>
+                                <p style="margin-top: 10px; font-size: 0.85em;">⚠️ Remember: NO MCQs, focus on
+                                    understanding thread
+                                    hierarchy and synchronization!</p>
+                            </footer>
+                        </div>
+
+
+</body>
+
+</html>
