@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HPC Final Exam Solutions</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.7;
+      padding: 30px 15px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      color: white;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .header p {
+      font-size: 1.2em;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 400;
+    }
+
+    .question-card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 35px;
+      margin-bottom: 40px;
+      border: 1px solid #334155;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #334155;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .question-number {
+      font-size: 1.5em;
+      font-weight: 700;
+      color: #a78bfa;
+    }
+
+    .marks-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 25px;
+      font-size: 0.95em;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .question-text {
+      font-size: 1.1em;
+      color: #cbd5e1;
+      margin-bottom: 25px;
+      line-height: 1.8;
+    }
+
+    .question-text strong {
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    /* CODE BLOCK - SCREENSHOT REPLICA STYLE */
+    .code-card,
+    .code-block {
+      background: #1e293b;
+      /* Outer card bg */
+      border: 1px solid #334155;
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 25px 0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .code-card-header,
+    .code-header {
+      background: #151b23;
+      /* Darker header */
+      padding: 12px 20px;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .step-badge {
+      background: #3b82f6;
+      /* Blue badge */
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+    }
+
+    .title-purple {
+      color: #d2a8ff;
+    }
+
+    .title-orange {
+      color: #fbbf24;
+    }
+
+    .title-blue {
+      color: #38bdf8;
+    }
+
+    .code-area,
+    .code-content {
+      background: #0d1117;
+      /* Very dark code bg */
+      padding: 20px 0;
+      overflow-x: auto;
+      color: #c9d1d9;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      width: 100%;
+    }
+
+    /* Flex layout for lines to replicate table-like structure */
+    .code-line {
+      display: flex;
+      padding: 0 20px;
+      width: 100%;
+    }
+
+    .code-line:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .line-num {
+      color: #484f58;
+      min-width: 30px;
+      text-align: right;
+      margin-right: 20px;
+      user-select: none;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .line-content {
+      white-space: pre;
+      font-family: 'JetBrains Mono', monospace;
+      flex: 1;
+    }
+
+    /* EXACT Syntax Highlighting from Screenshot */
+    .kwd,
+    .keyword {
+      color: #c678dd;
+      font-weight: bold;
+    }
+
+    /* Purple */
+    .cls,
+    .type {
+      color: #e5c07b;
+      font-weight: bold;
+    }
+
+    /* Yellow */
+    .str,
+    .string {
+      color: #98c379;
+    }
+
+    /* Green */
+    .func,
+    .function {
+      color: #61afef;
+    }
+
+    /* Blue */
+    .com,
+    .comment {
+      color: #7f848e;
+      font-style: italic;
+    }
+
+    /* Grey */
+    .typ {
+      color: #e5c07b;
+    }
+
+    /* Yellow */
+    .op,
+    .operator {
+      color: #56b6c2;
+    }
+
+    /* Cyan */
+    .num,
+    .number {
+      color: #d19a66;
+    }
+
+    /* Orange */
+
+    .blank-fill {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border: 1px dashed #fbbf24;
+      padding: 0 6px;
+      border-radius: 4px;
+    }
+
+    .show-answer-btn {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      padding: 14px 35px;
+      border-radius: 30px;
+      font-size: 1.05em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .show-answer-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.6);
+    }
+
+    .answer-box {
+      display: none;
+      background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+      border: 2px solid #10b981;
+      border-radius: 12px;
+      padding: 30px;
+      margin-top: 25px;
+    }
+
+    .answer-box.visible {
+      display: block;
+      animation: slideIn 0.4s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .answer-title {
+      font-size: 1.4em;
+      font-weight: 700;
+      color: #6ee7b7;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .answer-title::before {
+      content: "✓";
+      background: #10b981;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8em;
+    }
+
+    .answer-section {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 15px 0;
+      border-left: 4px solid #10b981;
+    }
+
+    .answer-section h3 {
+      color: #6ee7b7;
+      font-size: 1.15em;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .answer-section p {
+      color: #d1fae5;
+      line-height: 1.8;
+      margin: 8px 0;
+    }
+
+    .highlight {
+      background: #fbbf24;
+      color: #0f172a;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .result-box {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 1.15em;
+      font-weight: 600;
+      text-align: center;
+      margin: 20px 0;
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    }
+
+    ul.answer-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    ul.answer-list li {
+      padding: 8px 0 8px 30px;
+      position: relative;
+      color: #d1fae5;
+    }
+
+    ul.answer-list li::before {
+      content: "→";
+      position: absolute;
+      left: 5px;
+      color: #10b981;
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+
+      .question-card {
+        padding: 20px;
+      }
+
+      .code-content {
+        font-size: 0.85em;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="header">
+      <h1>🎓 HPC Final Exam Solutions</h1>
+      <p>Complete Answers Based on Lecture PDFs </p>
+    </div>
+
+    <!-- QUESTION 1: PTHREAD -->
+    <div class="question-card">
+      <div class="question-header">
+        <div class="question-number">📝 Question 1 - Pthread Programming</div>
+        <div class="marks-badge">4 Marks</div>
+      </div>
+
+      <div class="question-text">
+        <strong>Complete the following code that will execute the sinx() function code on a multicore system with two
+          cores:</strong>
+      </div>
+
+      <div class="code-card">
+        <div class="code-card-header">
+          <span class="step-badge">Source</span>
+          <span class="header-title title-purple">question_code.c</span>
+        </div>
+        <div class="code-area">
+          <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="kwd">void</span>
+              <span class="func">sinx</span>(<span class="kwd">int</span> N, <span class="kwd">int</span> terms, <span
+                class="kwd">float</span>* x, <span class="kwd">float</span>* result);</span></div>
+          <div class="code-line"><span class="line-num">2</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">3</span><span class="line-content"><span class="kwd">typedef
+                struct</span> { </span></div>
+          <div class="code-line"><span class="line-num">4</span><span class="line-content"> <span class="kwd">int</span>
+              N; </span></div>
+          <div class="code-line"><span class="line-num">5</span><span class="line-content"> <span class="kwd">int</span>
+              terms; </span></div>
+          <div class="code-line"><span class="line-num">6</span><span class="line-content"> <span
+                class="kwd">float</span>* x; </span></div>
+          <div class="code-line"><span class="line-num">7</span><span class="line-content"> <span
+                class="kwd">float</span>* result; </span></div>
+          <div class="code-line"><span class="line-num">8</span><span class="line-content">} <span
+                class="typ">my_args</span>;</span></div>
+          <div class="code-line"><span class="line-num">9</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">10</span><span class="line-content"><span
+                class="kwd">void</span> <span class="func">parallel_sinx</span>(<span class="kwd">int</span> N, <span
+                class="kwd">int</span> terms, <span class="kwd">float</span>* x, <span class="kwd">float</span>* result)
+              {</span></div>
+          <div class="code-line"><span class="line-num">11</span><span class="line-content"> <span
+                class="typ">pthread_t</span> thread_id; </span></div>
+          <div class="code-line"><span class="line-num">12</span><span class="line-content"> <span
+                class="typ">my_args</span> args;</span></div>
+          <div class="code-line"><span class="line-num">13</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">14</span><span class="line-content"> args.N <span
+                class="op">=</span> N/<span class="num">2</span>;</span></div>
+          <div class="code-line"><span class="line-num">15</span><span class="line-content"> args.terms <span
+                class="op">=</span> terms;</span></div>
+          <div class="code-line"><span class="line-num">16</span><span class="line-content"> args.x <span
+                class="op">=</span> x; </span></div>
+          <div class="code-line"><span class="line-num">17</span><span class="line-content"> args.result <span
+                class="op">=</span> result;</span></div>
+          <div class="code-line"><span class="line-num">18</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">19</span><span class="line-content"> <span
+                class="blank-fill">________________</span>(&amp;thread_id, NULL, my_thread_start, &amp;args); <span
+                class="com">// BLANK 1</span></span></div>
+          <div class="code-line"><span class="line-num">20</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">21</span><span class="line-content"> <span
+                class="func">sinx</span>(<span class="blank-fill">________________</span>); <span class="com">// BLANK
+                2: do work</span></span></div>
+          <div class="code-line"><span class="line-num">22</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">23</span><span class="line-content"> <span
+                class="blank-fill">________________</span>(thread_id, NULL); <span class="com">// BLANK 3</span></span>
+          </div>
+          <div class="code-line"><span class="line-num">24</span><span class="line-content">}</span></div>
+          <div class="code-line"><span class="line-num">25</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">26</span><span class="line-content"><span
+                class="kwd">void</span>* <span class="func">my_thread_start</span>(<span class="kwd">void</span>*
+              thread_arg) {</span></div>
+          <div class="code-line"><span class="line-num">27</span><span class="line-content"> <span
+                class="typ">my_args</span>* args <span class="op">=</span> (<span
+                class="typ">my_args</span>*)thread_arg;</span></div>
+          <div class="code-line"><span class="line-num">28</span><span class="line-content"> <span
+                class="func">sinx</span>(<span class="blank-fill">________________</span>); <span class="com">// BLANK
+                4: do work</span></span></div>
+          <div class="code-line"><span class="line-num">29</span><span class="line-content"> <span
+                class="kwd">return</span> NULL;</span></div>
+          <div class="code-line"><span class="line-num">30</span><span class="line-content">}</span></div>
+        </div>
+      </div>
+
+      <button class="show-answer-btn" onclick="toggleAnswer('answer1')">📖 Show Complete Solution</button>
+
+      <div class="answer-box" id="answer1">
+        <div class="answer-title">COMPLETE SOLUTION</div>
+
+        <div class="code-card">
+          <div class="code-card-header">
+            <span class="step-badge">Solution</span>
+            <span class="header-title title-orange">solution.c</span>
+          </div>
+          <div class="code-area">
+            <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="com">//
+                  Include pthread library</span></span></div>
+            <div class="code-line"><span class="line-num">2</span><span class="line-content"><span
+                  class="kwd">#include</span> <span class="str">&lt;pthread.h&gt;</span></span></div>
+            <div class="code-line"><span class="line-num">3</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">4</span><span class="line-content"><span class="kwd">typedef
+                  struct</span> { </span></div>
+            <div class="code-line"><span class="line-num">5</span><span class="line-content"> <span
+                  class="kwd">int</span> N; </span></div>
+            <div class="code-line"><span class="line-num">6</span><span class="line-content"> <span
+                  class="kwd">int</span> terms; </span></div>
+            <div class="code-line"><span class="line-num">7</span><span class="line-content"> <span
+                  class="kwd">float</span>* x; </span></div>
+            <div class="code-line"><span class="line-num">8</span><span class="line-content"> <span
+                  class="kwd">float</span>* result; </span></div>
+            <div class="code-line"><span class="line-num">9</span><span class="line-content">} <span
+                  class="typ">my_args</span>;</span></div>
+            <div class="code-line"><span class="line-num">10</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">11</span><span class="line-content"><span
+                  class="kwd">void</span> <span class="func">parallel_sinx</span>(<span class="kwd">int</span> N, <span
+                  class="kwd">int</span> terms, <span class="kwd">float</span>* x, <span class="kwd">float</span>*
+                result) {</span></div>
+            <div class="code-line"><span class="line-num">12</span><span class="line-content"> <span
+                  class="typ">pthread_t</span> thread_id; </span></div>
+            <div class="code-line"><span class="line-num">13</span><span class="line-content"> <span
+                  class="typ">my_args</span> args;</span></div>
+            <div class="code-line"><span class="line-num">14</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">15</span><span class="line-content"> <span class="com">//
+                  Setup arguments for thread</span></span></div>
+            <div class="code-line"><span class="line-num">16</span><span class="line-content"> args.N <span
+                  class="op">=</span> N/<span class="num">2</span>;</span></div>
+            <div class="code-line"><span class="line-num">17</span><span class="line-content"> args.terms <span
+                  class="op">=</span> terms;</span></div>
+            <div class="code-line"><span class="line-num">18</span><span class="line-content"> args.x <span
+                  class="op">=</span> x; </span></div>
+            <div class="code-line"><span class="line-num">19</span><span class="line-content"> args.result <span
+                  class="op">=</span> result;</span></div>
+            <div class="code-line"><span class="line-num">20</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">21</span><span class="line-content"> <span class="com">//
+                  BLANK 1: Create thread (runs in PARALLEL)</span></span></div>
+            <div class="code-line"><span class="line-num">22</span><span class="line-content"> <span
+                  class="func">pthread_create</span>(&amp;thread_id, NULL, my_thread_start, &amp;args);</span></div>
+            <div class="code-line"><span class="line-num">23</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">24</span><span class="line-content"> <span class="com">//
+                  BLANK 2: Main thread does second half (PARALLEL with thread)</span></span></div>
+            <div class="code-line"><span class="line-num">25</span><span class="line-content"> <span
+                  class="func">sinx</span>(N <span class="op">-</span> args.N, terms, &amp;x[args.N],
+                &amp;result[args.N]);</span></div>
+            <div class="code-line"><span class="line-num">26</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">27</span><span class="line-content"> <span class="com">//
+                  BLANK 3: Wait for thread to finish (SEQUENTIAL sync point)</span></span></div>
+            <div class="code-line"><span class="line-num">28</span><span class="line-content"> <span
+                  class="func">pthread_join</span>(thread_id, NULL);</span></div>
+            <div class="code-line"><span class="line-num">29</span><span class="line-content">}</span></div>
+            <div class="code-line"><span class="line-num">30</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">31</span><span class="line-content"><span
+                  class="kwd">void</span>* <span class="func">my_thread_start</span>(<span class="kwd">void</span>*
+                thread_arg) {</span></div>
+            <div class="code-line"><span class="line-num">32</span><span class="line-content"> <span
+                  class="typ">my_args</span>* args <span class="op">=</span> (<span
+                  class="typ">my_args</span>*)thread_arg;</span></div>
+            <div class="code-line"><span class="line-num">33</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">34</span><span class="line-content"> <span class="com">//
+                  BLANK 4: Thread does first half</span></span></div>
+            <div class="code-line"><span class="line-num">35</span><span class="line-content"> <span
+                  class="func">sinx</span>(args<span class="op">-&gt;</span>N, args<span class="op">-&gt;</span>terms,
+                args<span class="op">-&gt;</span>x, args<span class="op">-&gt;</span>result);</span></div>
+            <div class="code-line"><span class="line-num">36</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">37</span><span class="line-content"> <span
+                  class="kwd">return</span> NULL;</span></div>
+            <div class="code-line"><span class="line-num">38</span><span class="line-content">}</span></div>
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h3>🔑 KEY CONCEPTS (اهم حاجة)</h3>
+
+          <p><span class="highlight">1. pthread_create</span> - Creates thread that runs PARALLEL</p>
+          <ul class="answer-list">
+            <li>Thread executes <code>my_thread_start</code> function</li>
+            <li>Processes elements [0 to N/2-1]</li>
+            <li>Main thread continues immediately (doesn't wait)</li>
+          </ul>
+
+          <p style="margin-top: 15px;"><span class="highlight">2. pthread_join</span> - Makes execution SEQUENTIAL</p>
+          <ul class="answer-list">
+            <li>Main thread WAITS until created thread finishes</li>
+            <li>Synchronization point</li>
+            <li>Both threads must complete before program continues</li>
+          </ul>
+
+          <p style="margin-top: 15px;"><span class="highlight">3. Work Division:</span></p>
+          <ul class="answer-list">
+            <li>Thread 1: elements [0 to N/2-1] → runs in background (parallel)</li>
+            <li>Main thread: elements [N/2 to N-1] → runs at same time (parallel)</li>
+            <li>At pthread_join: wait until both finish (sequential)</li>
+          </ul>
+        </div>
+
+        <div class="result-box">
+          ✓ This creates 2 threads running in PARALLEL, then SYNCS at pthread_join
+        </div>
+
+        <p style="margin-top: 15px; color: #d1fae5;"><strong>📚 Reference:</strong> Lecture 5-6, "Expressing parallelism
+          using pthreads"</p>
+      </div>
+    </div>
+
+    <!-- QUESTION 2: CUDA -->
+    <div class="question-card">
+      <div class="question-header">
+        <div class="question-number">📝 Question 2 - CUDA Kernel</div>
+        <div class="marks-badge">Variable Marks</div>
+      </div>
+
+      <div class="question-text">
+        <strong>What is the content of the ip array on device after the following code has executed?</strong>
+      </div>
+
+      <div class="code-card">
+        <div class="code-card-header">
+          <span class="step-badge">Source</span>
+          <span class="header-title title-blue">cuda_kernel.cu</span>
+        </div>
+        <div class="code-area">
+          <div class="code-line"><span class="line-num">1</span><span class="line-content"><span
+                class="kwd">#include</span> <span class="str">&lt;stdio.h&gt;</span></span></div>
+          <div class="code-line"><span class="line-num">2</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">3</span><span class="line-content"><span
+                class="kwd">__global__</span> <span class="kwd">void</span> <span class="func">kernel</span>(<span
+                class="kwd">int</span> * ip) {</span></div>
+          <div class="code-line"><span class="line-num">4</span><span class="line-content"> <span class="kwd">int</span>
+              i <span class="op">=</span> threadIdx.x <span class="op">+</span> blockIdx.x<span
+                class="op">*</span>blockDim.x <span class="op">+</span> blockIdx.y<span
+                class="op">*</span>blockDim.x<span class="op">*</span>gridDim.x;</span></div>
+          <div class="code-line"><span class="line-num">5</span><span class="line-content"> ip[i] <span
+                class="op">=</span> blockIdx.x <span class="op">+</span> blockIdx.y;</span></div>
+          <div class="code-line"><span class="line-num">6</span><span class="line-content">}</span></div>
+          <div class="code-line"><span class="line-num">7</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">8</span><span class="line-content"><span class="kwd">int</span>
+              <span class="func">main</span> (<span class="kwd">int</span> argc, <span class="kwd">char</span> **argv[])
+              {</span></div>
+          <div class="code-line"><span class="line-num">9</span><span class="line-content"> <span class="kwd">int</span>
+              * ip;</span></div>
+          <div class="code-line"><span class="line-num">10</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">11</span><span class="line-content"> <span
+                class="typ">dim3</span> do <span class="op">=</span> <span class="func">dim3</span>(<span
+                class="num">3</span>, <span class="num">3</span>); <span class="com">// Grid: 3×3 blocks</span></span>
+          </div>
+          <div class="code-line"><span class="line-num">12</span><span class="line-content"> <span
+                class="typ">dim3</span> dl <span class="op">=</span> <span class="func">dim3</span>(<span
+                class="num">2</span>); <span class="com">// Block: 2 threads</span></span></div>
+          <div class="code-line"><span class="line-num">13</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">14</span><span class="line-content"> <span
+                class="kwd">int</span> io <span class="op">=</span> dl.x <span class="op">*</span> do.x <span
+                class="op">*</span> do.y <span class="op">*</span> <span class="kwd">sizeof</span>(<span
+                class="kwd">int</span>);</span></div>
+          <div class="code-line"><span class="line-num">15</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">16</span><span class="line-content"> <span
+                class="func">cudaMalloc</span>((<span class="kwd">void</span> **) &amp;ip, io);</span></div>
+          <div class="code-line"><span class="line-num">17</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">18</span><span class="line-content"> kernel<span
+                class="op">&lt;&lt;&lt;</span>do, dl<span class="op">&gt;&gt;&gt;</span>(ip);</span></div>
+          <div class="code-line"><span class="line-num">19</span><span class="line-content">}</span></div>
+        </div>
+      </div>
+
+      <button class="show-answer-btn" onclick="toggleAnswer('answer2')">📖 Show Step-by-Step Solution</button>
+
+      <div class="answer-box" id="answer2">
+        <div class="answer-title">COMPLETE ANALYSIS</div>
+
+        <div class="answer-section">
+          <h3>Step 1: Grid Configuration</h3>
+          <p>Grid: <code>dim3(3, 3)</code> → 3×3 = <strong>9 blocks total</strong></p>
+          <ul class="answer-list">
+            <li>blockIdx.x: 0, 1, 2</li>
+            <li>blockIdx.y: 0, 1, 2</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h3>Step 2: Block Configuration</h3>
+          <p>Block: <code>dim3(2)</code> → <strong>2 threads per block</strong></p>
+          <ul class="answer-list">
+            <li>threadIdx.x: 0, 1</li>
+            <li>blockDim.x: 2</li>
+            <li>gridDim.x: 3</li>
+          </ul>
+          <p style="margin-top: 10px;"><strong>Total threads = 9 blocks × 2 threads/block = 18 threads</strong></p>
+        </div>
+
+        <div class="answer-section">
+          <h3>Step 3: Array Size Calculation</h3>
+          <div class="code-block">
+            <div class="code-content">
+              io <span class="operator">=</span> dl.x <span class="operator">×</span> do.x <span
+                class="operator">×</span> do.y <span class="operator">×</span> <span class="keyword">sizeof</span>(<span
+                class="keyword">int</span>)
+              <span class="operator">=</span> <span class="number">2</span> <span class="operator">×</span> <span
+                class="number">3</span> <span class="operator">×</span> <span class="number">3</span> <span
+                class="operator">×</span> <span class="number">4</span> <span class="operator">=</span> <span
+                class="number">72</span> bytes
+
+              <span class="comment">// Array size</span>
+              elements <span class="operator">=</span> <span class="number">72</span> / <span class="number">4</span>
+              <span class="operator">=</span> <span class="highlight">18 integers</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h3>Step 4: Index Formula</h3>
+          <div class="code-block">
+            <div class="code-content">
+              i <span class="operator">=</span> threadIdx.x <span class="operator">+</span> blockIdx.x<span
+                class="operator">*</span>blockDim.x <span class="operator">+</span> blockIdx.y<span
+                class="operator">*</span>blockDim.x<span class="operator">*</span>gridDim.x
+              i <span class="operator">=</span> threadIdx.x <span class="operator">+</span> blockIdx.x<span
+                class="operator">*</span><span class="number">2</span> <span class="operator">+</span> blockIdx.y<span
+                class="operator">*</span><span class="number">2</span><span class="operator">*</span><span
+                class="number">3</span>
+              i <span class="operator">=</span> threadIdx.x <span class="operator">+</span> blockIdx.x<span
+                class="operator">*</span><span class="number">2</span> <span class="operator">+</span> blockIdx.y<span
+                class="operator">*</span><span class="number">6</span>
+
+              <span class="comment">// Value formula</span>
+              ip[i] <span class="operator">=</span> blockIdx.x <span class="operator">+</span> blockIdx.y
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h3>Step 5: Calculate Each Element</h3>
+          <div class="code-block">
+            <div class="code-content">
+              <span class="comment">Block(0,0):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">0</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">0</span> → ip[<span
+                class="number">0</span>]<span class="operator">=</span><span class="number">0</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">=</span><span
+                class="highlight">0</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">0</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">1</span> → ip[<span class="number">1</span>]<span class="operator">=</span><span
+                class="number">0</span><span class="operator">+</span><span class="number">0</span><span
+                class="operator">=</span><span class="highlight">0</span>
+
+              <span class="comment">Block(1,0):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">1</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">2</span> → ip[<span
+                class="number">2</span>]<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">=</span><span
+                class="highlight">1</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">0</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">3</span> → ip[<span class="number">3</span>]<span class="operator">=</span><span
+                class="number">1</span><span class="operator">+</span><span class="number">0</span><span
+                class="operator">=</span><span class="highlight">1</span>
+
+              <span class="comment">Block(2,0):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">2</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">4</span> → ip[<span
+                class="number">4</span>]<span class="operator">=</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">=</span><span
+                class="highlight">2</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">0</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">5</span> → ip[<span class="number">5</span>]<span class="operator">=</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">0</span><span
+                class="operator">=</span><span class="highlight">2</span>
+
+              <span class="comment">Block(0,1):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">0</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">6</span> → ip[<span
+                class="number">6</span>]<span class="operator">=</span><span class="number">0</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">=</span><span
+                class="highlight">1</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">1</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">7</span> → ip[<span class="number">7</span>]<span class="operator">=</span><span
+                class="number">0</span><span class="operator">+</span><span class="number">1</span><span
+                class="operator">=</span><span class="highlight">1</span>
+
+              <span class="comment">Block(1,1):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">1</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">8</span> → ip[<span
+                class="number">8</span>]<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">=</span><span
+                class="highlight">2</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">1</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">9</span> → ip[<span class="number">9</span>]<span class="operator">=</span><span
+                class="number">1</span><span class="operator">+</span><span class="number">1</span><span
+                class="operator">=</span><span class="highlight">2</span>
+
+              <span class="comment">Block(2,1):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">2</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">10</span> → ip[<span
+                class="number">10</span>]<span class="operator">=</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">=</span><span
+                class="highlight">3</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">1</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">11</span> → ip[<span class="number">11</span>]<span class="operator">=</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">1</span><span
+                class="operator">=</span><span class="highlight">3</span>
+
+              <span class="comment">Block(0,2):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">0</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">12</span> → ip[<span
+                class="number">12</span>]<span class="operator">=</span><span class="number">0</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">=</span><span
+                class="highlight">2</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">0</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">2</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">13</span> → ip[<span class="number">13</span>]<span class="operator">=</span><span
+                class="number">0</span><span class="operator">+</span><span class="number">2</span><span
+                class="operator">=</span><span class="highlight">2</span>
+
+              <span class="comment">Block(1,2):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">1</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">14</span> → ip[<span
+                class="number">14</span>]<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">=</span><span
+                class="highlight">3</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">1</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">2</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">15</span> → ip[<span class="number">15</span>]<span class="operator">=</span><span
+                class="number">1</span><span class="operator">+</span><span class="number">2</span><span
+                class="operator">=</span><span class="highlight">3</span>
+
+              <span class="comment">Block(2,2):</span> Thread <span class="number">0</span> → i<span
+                class="operator">=</span><span class="number">0</span><span class="operator">+</span><span
+                class="number">2</span><span class="operator">*</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">*</span><span
+                class="number">6</span><span class="operator">=</span><span class="number">16</span> → ip[<span
+                class="number">16</span>]<span class="operator">=</span><span class="number">2</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">=</span><span
+                class="highlight">4</span>
+              Thread <span class="number">1</span> → i<span class="operator">=</span><span class="number">1</span><span
+                class="operator">+</span><span class="number">2</span><span class="operator">*</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">2</span><span
+                class="operator">*</span><span class="number">6</span><span class="operator">=</span><span
+                class="number">17</span> → ip[<span class="number">17</span>]<span class="operator">=</span><span
+                class="number">2</span><span class="operator">+</span><span class="number">2</span><span
+                class="operator">=</span><span class="highlight">4</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-box">
+          🎯 FINAL ANSWER:<br>
+          ip[] = {0, 0, 1, 1, 2, 2, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3, 4, 4}
+        </div>
+
+        <p style="margin-top: 15px; color: #d1fae5;"><strong>📚 Reference:</strong> Lecture 7-8 Part 1, Slides 9-10</p>
+      </div>
+    </div>
+
+    <!-- QUESTION 3: AMDAHL'S LAW -->
+    <div class="question-card">
+      <div class="question-header">
+        <div class="question-number">📝 Question 3 - Amdahl's Law</div>
+        <div class="marks-badge">10 Marks</div>
+      </div>
+
+      <div class="question-text">
+        <strong>If I have an application which, when run on a single processor, spends 20% of its runtime on serial work
+          and the other 80% on perfectly, linearly parallelizable work. Calculate the speedup and efficiency when
+          using:</strong><br><br>
+        a. 4 processors<br>
+        b. 16 processors<br>
+        c. 100 processors<br>
+        d. ∞ processors
+      </div>
+
+      <button class="show-answer-btn" onclick="toggleAnswer('answer3')">📖 Show All Calculations</button>
+
+      <div class="answer-box" id="answer3">
+        <div class="answer-title">AMDAHL'S LAW CALCULATIONS</div>
+
+        <div class="answer-section">
+          <h3>Given Information</h3>
+          <ul class="answer-list">
+            <li>Serial portion (f) = 20% = 0.20</li>
+            <li>Parallel portion = 80% = 0.80</li>
+          </ul>
+        </div>
+
+        <div class="answer-section">
+          <h3>Amdahl's Law Formula</h3>
+          <div class="code-block">
+            <div class="code-content">
+              <span class="comment">// Speedup Formula</span>
+              Speedup <span class="operator">=</span> <span class="number">1</span> / (f <span class="operator">+</span>
+              (<span class="number">1</span><span class="operator">-</span>f)/n)
+
+              <span class="keyword">where</span>:
+              f <span class="operator">=</span> fraction of serial code (<span class="number">0.20</span>)
+              n <span class="operator">=</span> number of processors
+              (<span class="number">1</span><span class="operator">-</span>f) <span class="operator">=</span> fraction
+              of parallel code (<span class="number">0.80</span>)
+
+              <span class="comment">// Efficiency Formula</span>
+              Efficiency <span class="operator">=</span> Speedup / n
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h3>a) 4 Processors</h3>
+          <div class="code-block">
+            <div class="code-content">
+              Speedup <span class="operator">=</span> <span class="number">1</span> / (<span class="number">0.20</span>
+              <span class="operator">+</span> <span class="number">0.80</span>/<span class="number">4</span>)
+              <span class="operator">=</span> <span class="number">1</span> / (<span class="number">0.20</span> <span
+                class="operator">+</span> <span class="number">0.20</span>)
+              <span class="operator">=</span> <span class="number">1</span> / <span class="number">0.40</span>
+              <span class="operator">=</span> <span class="highlight">2.5x</span>
+
+              Efficiency <span class="operator">=</span> <span class="number">2.5</span> / <span class="number">4</span>
+              <span class="operator">=</span> <span class="number">0.625</span>
+              <span class="operator">=</span> <span class="highlight">62.5%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h3>b) 16 Processors</h3>
+          <div class="code-block">
+            <div class="code-content">
+              Speedup <span class="operator">=</span> <span class="number">1</span> / (<span class="number">0.20</span>
+              <span class="operator">+</span> <span class="number">0.80</span>/<span class="number">16</span>)
+              <span class="operator">=</span> <span class="number">1</span> / (<span class="number">0.20</span> <span
+                class="operator">+</span> <span class="number">0.05</span>)
+              <span class="operator">=</span> <span class="number">1</span> / <span class="number">0.25</span>
+              <span class="operator">=</span> <span class="highlight">4.0x</span>
+
+              Efficiency <span class="operator">=</span> <span class="number">4.0</span> / <span
+                class="number">16</span>
+              <span class="operator">=</span> <span class="number">0.25</span>
+              <span class="operator">=</span> <span class="highlight">25%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h3>c) 100 Processors</h3>
+          <div class="code-block">
+            <div class="code-content">
+              Speedup <span class="operator">=</span> <span class="number">1</span> / (<span class="number">0.20</span>
+              <span class="operator">+</span> <span class="number">0.80</span>/<span class="number">100</span>)
+              <span class="operator">=</span> <span class="number">1</span> / (<span class="number">0.20</span> <span
+                class="operator">+</span> <span class="number">0.008</span>)
+              <span class="operator">=</span> <span class="number">1</span> / <span class="number">0.208</span>
+              <span class="operator">=</span> <span class="highlight">4.81x</span>
+
+              Efficiency <span class="operator">=</span> <span class="number">4.81</span> / <span
+                class="number">100</span>
+              <span class="operator">=</span> <span class="number">0.0481</span>
+              <span class="operator">=</span> <span class="highlight">4.81%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-section">
+          <h3>d) ∞ Processors</h3>
+          <div class="code-block">
+            <div class="code-content">
+              As n → ∞, (<span class="number">1</span><span class="operator">-</span>f)/n → <span
+                class="number">0</span>
+
+              Speedup <span class="operator">=</span> <span class="number">1</span> / f
+              <span class="operator">=</span> <span class="number">1</span> / <span class="number">0.20</span>
+              <span class="operator">=</span> <span class="highlight">5.0x (MAXIMUM POSSIBLE)</span>
+
+              Efficiency → <span class="highlight">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-box">
+          🔑 KEY INSIGHT:<br>
+          The 20% serial code limits maximum speedup to 5x,<br>
+          no matter how many processors we add!
+        </div>
+
+        <p style="margin-top: 15px; color: #d1fae5;"><strong>📚 Reference:</strong> Lecture 3-4, Amdahl's Law</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleAnswer(id) {
+      const answer = document.getElementById(id);
+      const btn = event.target;
+
+      if (answer.classList.contains('visible')) {
+        answer.classList.remove('visible');
+        btn.textContent = btn.textContent.replace('Hide', 'Show');
+      } else {
+        answer.classList.add('visible');
+        btn.textContent = btn.textContent.replace('Show', 'Hide');
+      }
+    }
+  </script>
+</body>
+
+</html>
